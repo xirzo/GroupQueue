@@ -5,6 +5,7 @@ project(group_queue LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(nlohmann_json 3.11.3 REQUIRED)
+find_package(SQLiteCpp REQUIRED)
 
 add_subdirectory(bin)
 add_subdirectory(lib)
