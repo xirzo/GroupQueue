@@ -38,7 +38,14 @@ std::expected<std::vector<gq::User>, std::string> JsonReader::readUsers() const 
         return std::unexpected("Cannot open users file");
     }
 
-    nlohmann::json j = nlohmann::json::parse(file);
+    nlohmann::json j;
+
+    try {
+        j = nlohmann::json::parse(file);
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(std::string("Users JSON parse error: ") + e.what());
+    }
 
     std::vector<gq::User> users;
 
@@ -65,7 +72,14 @@ std::expected<std::vector<gq::Admin>, std::string> JsonReader::readAdmins()
         return std::unexpected("Cannot open admins file");
     }
 
-    nlohmann::json j = nlohmann::json::parse(file);
+    nlohmann::json j;
+
+    try {
+        j = nlohmann::json::parse(file);
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(std::string("Admins JSON parse error: ") + e.what());
+    }
 
     std::vector<gq::Admin> admins;
 
