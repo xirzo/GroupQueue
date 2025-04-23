@@ -6,12 +6,12 @@
 #include "json_reader.h"
 
 constexpr char kUsersPath[] = "users.json";
-constexpr char kAdminsPath[] = "admins.json";
+constexpr char kDbPath[] = "data.db";
 
 int main(void) {
-    auto json_reader = std::make_unique<JsonReader>(kUsersPath, kAdminsPath);
+    auto json_reader = std::make_unique<JsonReader>(kUsersPath);
 
-    auto app_result = gq::makeApp(std::move(json_reader));
+    auto app_result = gq::makeApp(kDbPath, std::move(json_reader));
 
     if (!app_result) {
         std::cerr << app_result.error() << std::endl;

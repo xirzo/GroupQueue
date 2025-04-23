@@ -1,4 +1,4 @@
-add_library(app STATIC ./src/app.cpp)
+add_library(app STATIC ./src/app.cpp ./src/db.cpp)
 
 target_include_directories(
   app

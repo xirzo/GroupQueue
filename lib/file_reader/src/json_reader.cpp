@@ -20,16 +20,14 @@ inline void from_json(const nlohmann::json& j, gq::User& u) {
 
 }  // namespace gq
 
-JsonReader::JsonReader(std::filesystem::path users_path,
-                       std::filesystem::path admins_path)
-    : users_path_(users_path), admins_path_(admins_path) {}
+JsonReader::JsonReader(std::filesystem::path users_path) : users_path_(users_path) {}
 
 std::expected<std::vector<gq::User>, std::string> JsonReader::readUsers() const noexcept {
-    if (std::filesystem::exists(admins_path_) == false) {
+    if (std::filesystem::exists(users_path_) == false) {
         return std::unexpected("Users file does not exist");
     }
 
-    std::ifstream file(admins_path_);
+    std::ifstream file(users_path_);
 
     if (file.is_open() == false) {
         return std::unexpected("Cannot open users file");
