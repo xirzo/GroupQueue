@@ -5,7 +5,7 @@
 #include "json_reader.h"
 
 constexpr char kUsersPath[] = "users.json";
-constexpr char kAdminsPath[] = "users.json";
+constexpr char kAdminsPath[] = "admins.json";
 
 int main(void) {
     auto json_reader = std::make_unique<JsonReader>(kUsersPath, kAdminsPath);

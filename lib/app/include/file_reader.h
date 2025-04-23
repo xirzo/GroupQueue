@@ -1,6 +1,7 @@
 #ifndef FILE_READER_H
 #define FILE_READER_H
 
+#include <expected>
 #include <vector>
 
 #include "admin.h"
@@ -12,8 +13,9 @@ class FileReader
 {
 public:
     virtual ~FileReader() = default;
-    virtual std::vector<User> readUsers() const = 0;
-    virtual std::vector<Admin> readAdmins() const = 0;
+    virtual std::expected<std::vector<User>, std::string> readUsers() const noexcept = 0;
+    virtual std::expected<std::vector<Admin>, std::string> readAdmins()
+        const noexcept = 0;
 };
 
 }  // namespace gq

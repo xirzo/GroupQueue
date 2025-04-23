@@ -10,8 +10,9 @@ class JsonReader : public gq::FileReader
 public:
     JsonReader(std::filesystem::path users_path, std::filesystem::path admins_path);
 
-    std::vector<gq::User> readUsers() const override;
-    std::vector<gq::Admin> readAdmins() const override;
+    std::expected<std::vector<gq::User>, std::string> readUsers() const noexcept override;
+    std::expected<std::vector<gq::Admin>, std::string> readAdmins()
+        const noexcept override;
 
 private:
     std::filesystem::path users_path_;
