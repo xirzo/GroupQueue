@@ -19,6 +19,10 @@ std::expected<void, std::string> Database::init(std::filesystem::path db_path) n
             "CREATE TABLE IF NOT EXISTS list(list_id INTEGER PRIMARY KEY, "
             "name TEXT UNIQUE)");
 
+        db_->exec(
+            "CREATE TABLE IF NOT EXISTS list_user(list_user_id INTEGER PRIMARY KEY, "
+            "user_id INTEGER, list_user_order INTEGER");
+
         return {};
     }
     catch (const SQLite::Exception& e) {
