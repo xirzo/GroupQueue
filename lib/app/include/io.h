@@ -17,6 +17,7 @@ class IO
 public:
     virtual ~IO() = default;
 
+    virtual bool running() const = 0;
     virtual void startListening() = 0;
     virtual void stopListening() = 0;
 };

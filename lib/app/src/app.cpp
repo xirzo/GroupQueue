@@ -9,8 +9,14 @@
 
 namespace gq {
 
-App::App(std::unique_ptr<FileReader> file_reader) noexcept
-    : file_reader_(std::move(file_reader)) {}
+App::App(std::unique_ptr<FileReader> file_reader, std::unique_ptr<IO> io) noexcept
+    : file_reader_(std::move(file_reader)), io_(std::move(io)) {}
+
+App::~App() {
+    if (io_->running()) {
+        io_->stopListening();
+    }
+}
 
 std::expected<void, std::string> App::init(std::filesystem::path db_path) noexcept {
     auto db_result = makeDatabase(db_path);
@@ -37,6 +43,8 @@ std::expected<void, std::string> App::init(std::filesystem::path db_path) noexce
             continue;
         }
     }
+
+    io_->startListening();
 
     return {};
 }

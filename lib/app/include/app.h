@@ -7,18 +7,21 @@
 
 #include "db.h"
 #include "file_reader.h"
+#include "io.h"
 
 namespace gq {
 
 class App
 {
 public:
-    App(std::unique_ptr<FileReader> file_reader) noexcept;
+    App(std::unique_ptr<FileReader> file_reader, std::unique_ptr<IO> io) noexcept;
+    ~App();
 
     std::expected<void, std::string> init(std::filesystem::path db_path) noexcept;
 
 private:
     std::unique_ptr<FileReader> file_reader_;
+    std::unique_ptr<IO> io_;
     std::unique_ptr<Database> db_;
 };
 

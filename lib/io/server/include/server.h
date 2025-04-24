@@ -14,6 +14,7 @@ public:
     ServerIO(std::size_t port, std::function<std::string(gq::InputType)> callback);
     ~ServerIO() override;
 
+    bool running() const override;
     void startListening() override;
     void stopListening() override;
 
