@@ -20,6 +20,9 @@ public:
     std::expected<void, std::string> init(std::filesystem::path db_path) noexcept;
 
 private:
+    std::string handleInput(gq::InputType type);
+
+private:
     std::unique_ptr<FileReader> file_reader_;
     std::unique_ptr<IO> io_;
     std::unique_ptr<Database> db_;

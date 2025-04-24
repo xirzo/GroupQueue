@@ -44,9 +44,26 @@ std::expected<void, std::string> App::init(std::filesystem::path db_path) noexce
         }
     }
 
+    io_->setCallback([this](gq::InputType type) { return handleInput(type); });
+
     io_->startListening();
 
     return {};
+}
+
+std::string App::handleInput(gq::InputType type) {
+    switch (type) {
+        case InputType::UNKNOWN:
+            return "Unknown command";
+        case gq::InputType::GET_LIST_USERS:
+            return "User list: Alice, Bob, Charlie";
+        case gq::InputType::GET_LISTS:
+            return "Lists: Shopping, Work, Personal";
+        case gq::InputType::ADD_LIST:
+            return "A new list was added!";
+        case gq::InputType::DELETE_LIST:
+            return "A list was deleted!";
+    }
 }
 
 }  // namespace gq

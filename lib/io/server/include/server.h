@@ -11,9 +11,10 @@
 class ServerIO : public gq::IO
 {
 public:
-    ServerIO(std::size_t port, std::function<std::string(gq::InputType)> callback);
+    ServerIO(std::size_t port);
     ~ServerIO() override;
 
+    void setCallback(std::function<std::string(gq::InputType)> callback) override;
     bool running() const override;
     void startListening() override;
     void stopListening() override;

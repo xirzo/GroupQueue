@@ -4,8 +4,7 @@
 
 #include "io.h"
 
-ServerIO::ServerIO(std::size_t port, std::function<std::string(gq::InputType)> callback)
-    : port_(port), callback_(std::move(callback)) {}
+ServerIO::ServerIO(std::size_t port) : port_(port) {}
 
 ServerIO::~ServerIO() {
     stopListening();
@@ -15,8 +14,16 @@ ServerIO::~ServerIO() {
     }
 }
 
+void ServerIO::setCallback(std::function<std::string(gq::InputType)> callback) {
+    callback_ = callback;
+}
+
+bool ServerIO::running() const {
+    return running_;
+}
+
 void ServerIO::startListening() {
-    if (running_.load()) {
+    if (running_.load() || !callback_) {
         return;
     }
 
