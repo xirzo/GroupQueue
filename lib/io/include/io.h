@@ -2,29 +2,22 @@
 #define IO_H
 
 #include <expected>
+#include <memory>
 #include <string>
 
-namespace gq {
-
-enum class InputType
-{
-    UNKNOWN,
-    GET_LIST_USERS,
-    GET_LISTS,
-    ADD_LIST,
-    DELETE_LIST,
-};
+#include "command.h"
 
 class IO
 {
 public:
     virtual ~IO() = default;
 
-    virtual bool running() const = 0;
+    virtual std::expected<void, std::string> tryRegisterCommand(
+        std::unique_ptr<Command> command) = 0;
+
     virtual std::expected<void, std::string> startListening() = 0;
     virtual void stopListening() = 0;
+    virtual bool running() const = 0;
 };
-
-}  // namespace gq
 
 #endif  // !IO_H
