@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include <optional>
 
 #include "db.h"
 #include "file_reader.h"
@@ -12,11 +11,11 @@ namespace gq {
 App::App(std::unique_ptr<FileReader> file_reader) noexcept
     : file_reader_(std::move(file_reader)) {}
 
-std::optional<std::string> App::init(std::filesystem::path db_path) noexcept {
+std::expected<void, std::string> App::init(std::filesystem::path db_path) noexcept {
     auto db_result = makeDatabase(db_path);
 
     if (!db_result) {
-        return db_result.error();
+        return std::unexpected(db_result.error());
     }
 
     db_ = std::move(db_result.value());
@@ -24,7 +23,7 @@ std::optional<std::string> App::init(std::filesystem::path db_path) noexcept {
     auto users_result = file_reader_->readUsers();
 
     if (!users_result) {
-        return users_result.error();
+        return std::unexpected(users_result.error());
     }
 
     for (const User& user : users_result.value()) {
@@ -38,7 +37,7 @@ std::optional<std::string> App::init(std::filesystem::path db_path) noexcept {
         }
     }
 
-    return std::nullopt;
+    return {};
 }
 
 }  // namespace gq
