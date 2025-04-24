@@ -1,4 +1,4 @@
-add_library(server STATIC ./src/server.cpp)
+add_library(server STATIC server.cpp)
 
 target_include_directories(
   server

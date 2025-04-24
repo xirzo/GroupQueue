@@ -6,9 +6,7 @@
 
 #include "user.h"
 
-namespace gq {
-
-inline void from_json(const nlohmann::json& j, gq::User& u) {
+inline void from_json(const nlohmann::json& j, User& u) {
     u.user_id = kEmptyUserId;
     j.at("telegram_id").get_to(u.telegram_id);
     j.at("first_name").get_to(u.first_name);
@@ -17,11 +15,9 @@ inline void from_json(const nlohmann::json& j, gq::User& u) {
     j.at("admin").get_to(u.admin);
 }
 
-}  // namespace gq
-
 JsonReader::JsonReader(std::filesystem::path users_path) : users_path_(users_path) {}
 
-std::expected<std::vector<gq::User>, std::string> JsonReader::readUsers() const noexcept {
+std::expected<std::vector<User>, std::string> JsonReader::readUsers() const noexcept {
     if (std::filesystem::exists(users_path_) == false) {
         return std::unexpected("Users file does not exist");
     }
@@ -41,10 +37,10 @@ std::expected<std::vector<gq::User>, std::string> JsonReader::readUsers() const 
         return std::unexpected(std::string("Users JSON parse error: ") + e.what());
     }
 
-    std::vector<gq::User> users;
+    std::vector<User> users;
 
     for (const auto& el : j) {
-        users.emplace_back(el.get<gq::User>());
+        users.emplace_back(el.get<User>());
     }
 
     if (users.empty()) {

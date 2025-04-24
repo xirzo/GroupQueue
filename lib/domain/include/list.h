@@ -3,8 +3,6 @@
 
 #include <string>
 
-namespace gq {
-
 struct List
 {
     int64_t list_id;
@@ -12,7 +10,5 @@ struct List
 
     List(const std::string& name) : list_id(-1), name(name) {}
 };
-
-}  // namespace gq
 
 #endif  // !LISH_H

@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <functional>
+#include <expected>
 #include <string>
 
 namespace gq {
@@ -20,9 +20,8 @@ class IO
 public:
     virtual ~IO() = default;
 
-    virtual void setCallback(std::function<std::string(gq::InputType)> callback) = 0;
     virtual bool running() const = 0;
-    virtual void startListening() = 0;
+    virtual std::expected<void, std::string> startListening() = 0;
     virtual void stopListening() = 0;
 };
 

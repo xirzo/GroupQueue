@@ -3,8 +3,6 @@
 
 #include <string>
 
-namespace gq {
-
 constexpr int64_t kEmptyUserId = -1;
 
 struct User
@@ -16,7 +14,5 @@ struct User
     std::string second_name;
     bool admin;
 };
-
-}  // namespace gq
 
 #endif  // !USER_H
