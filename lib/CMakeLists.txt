@@ -1,3 +1,3 @@
-add_subdirectory(domain)
-add_subdirectory(file_reader)
-add_subdirectory(io)
+add_subdirectory(server)
+add_subdirectory(model)
+add_subdirectory(list_holder)
