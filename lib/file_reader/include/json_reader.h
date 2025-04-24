@@ -10,7 +10,7 @@ class JsonReader : public FileReader
 public:
     JsonReader(std::filesystem::path users_path);
 
-    std::expected<std::vector<User>, std::string> readUsers() const noexcept override;
+    std::expected<std::vector<User>, std::string> tryReadUsers() const noexcept override;
 
 private:
     std::filesystem::path users_path_;

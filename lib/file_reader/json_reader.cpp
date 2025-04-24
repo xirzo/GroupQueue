@@ -17,7 +17,7 @@ inline void from_json(const nlohmann::json& j, User& u) {
 
 JsonReader::JsonReader(std::filesystem::path users_path) : users_path_(users_path) {}
 
-std::expected<std::vector<User>, std::string> JsonReader::readUsers() const noexcept {
+std::expected<std::vector<User>, std::string> JsonReader::tryReadUsers() const noexcept {
     if (std::filesystem::exists(users_path_) == false) {
         return std::unexpected("Users file does not exist");
     }

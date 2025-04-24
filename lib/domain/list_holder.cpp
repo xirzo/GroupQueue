@@ -1,9 +1,12 @@
 #include "list_holder.h"
 
+#include <iostream>
+
 #include "list.h"
 
-ListHolder::ListHolder(const std::filesystem::path& db_path)
-    : db_path_(std::move(db_path)) {}
+ListHolder::ListHolder(const std::filesystem::path& db_path,
+                       std::unique_ptr<FileReader> file_reader) noexcept
+    : db_path_(std::move(db_path)), file_reader_(std::move(file_reader)) {}
 
 std::expected<void, std::string> ListHolder::tryAddUser(const User& user) noexcept {
     if (user.user_id != kEmptyUserId) {
@@ -63,6 +66,23 @@ std::expected<void, std::string> ListHolder::init() noexcept {
         db_->exec(
             "CREATE TABLE IF NOT EXISTS list_user(list_user_id INTEGER PRIMARY KEY, "
             "user_id INTEGER, list_user_order INTEGER)");
+
+        auto users_result = file_reader_->tryReadUsers();
+
+        if (!users_result) {
+            return std::unexpected(users_result.error());
+        }
+
+        for (const User& user : users_result.value()) {
+            auto add_result = tryAddUser(user);
+
+            if (!add_result) {
+                std::cerr << "Could not add user: " << user.first_name << " "
+                          << user.surname << " | " << add_result.error()
+                          << " | skipping..." << std::endl;
+                continue;
+            }
+        }
 
         return {};
     }

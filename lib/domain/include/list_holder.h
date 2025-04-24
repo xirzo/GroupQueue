@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "file_reader.h"
 #include "list.h"
 #include "user.h"
 
@@ -32,12 +33,14 @@ public:
     std::expected<void, std::string> tryAddList(const List& list) noexcept;
 
 private:
-    ListHolder(const std::filesystem::path& db_path);
+    ListHolder(const std::filesystem::path& db_path,
+               std::unique_ptr<FileReader> file_reader) noexcept;
     std::expected<void, std::string> init() noexcept;
 
 private:
     std::filesystem::path db_path_;
     std::unique_ptr<SQLite::Database> db_;
+    std::unique_ptr<FileReader> file_reader_;
 };
 
 #endif  // !LIST_HOLDER_H
