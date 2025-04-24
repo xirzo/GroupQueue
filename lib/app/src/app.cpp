@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include <filesystem>
+#include <iostream>
 #include <optional>
 
 #include "db.h"
@@ -18,14 +19,24 @@ std::optional<std::string> App::init(std::filesystem::path db_path) noexcept {
         return db_result.error();
     }
 
+    db_ = std::move(db_result.value());
+
     auto users_result = file_reader_->readUsers();
 
     if (!users_result) {
         return users_result.error();
     }
 
-    // add users to according tables if they are not present
-    // db_...
+    for (const User& user : users_result.value()) {
+        auto add_user_result = db_->tryAddUser(user);
+
+        if (!add_user_result) {
+            // TODO: Remove this
+            std::cout << user.first_name << " " << user.surname
+                      << " was skipped during init" << std::endl;
+            continue;
+        }
+    }
 
     return std::nullopt;
 }

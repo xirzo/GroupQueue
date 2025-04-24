@@ -7,12 +7,15 @@
 #include <filesystem>
 #include <memory>
 
+#include "user.h"
+
 namespace gq {
 
 class Database
 {
 public:
     std::optional<std::string> init(std::filesystem::path db_path) noexcept;
+    std::expected<void, std::string> tryAddUser(const User& user) noexcept;
 
 private:
     std::unique_ptr<SQLite::Database> db_;
