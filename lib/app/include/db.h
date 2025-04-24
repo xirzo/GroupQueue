@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "list.h"
 #include "user.h"
 
 namespace gq {
@@ -16,6 +17,7 @@ class Database
 public:
     std::expected<void, std::string> init(std::filesystem::path db_path) noexcept;
     std::expected<void, std::string> tryAddUser(const User& user) noexcept;
+    std::expected<void, std::string> tryAddList(const List& list) noexcept;
 
 private:
     std::unique_ptr<SQLite::Database> db_;
@@ -27,7 +29,7 @@ std::expected<std::unique_ptr<Database>, std::string> makeDatabase(
     auto db = std::make_unique<Database>(std::forward<Args>(args)...);
     auto init_result = db->init(db_path);
 
-    if (init_result) {
+    if (!init_result) {
         return std::unexpected(init_result.error());
     }
 

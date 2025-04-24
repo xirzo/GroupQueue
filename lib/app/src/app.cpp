@@ -1,5 +1,6 @@
 #include "app.h"
 
+#include <expected>
 #include <filesystem>
 #include <iostream>
 

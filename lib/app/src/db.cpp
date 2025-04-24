@@ -1,5 +1,7 @@
 #include "db.h"
 
+#include "list.h"
+
 namespace gq {
 
 std::expected<void, std::string> Database::init(std::filesystem::path db_path) noexcept {
@@ -15,7 +17,7 @@ std::expected<void, std::string> Database::init(std::filesystem::path db_path) n
 
         db_->exec(
             "CREATE TABLE IF NOT EXISTS list(list_id INTEGER PRIMARY KEY, "
-            "name TEXT)");
+            "name TEXT UNIQUE)");
 
         return {};
     }
@@ -38,6 +40,21 @@ std::expected<void, std::string> Database::tryAddUser(const User& user) noexcept
     query.bind(3, user.surname);
     query.bind(4, user.second_name);
     query.bind(5, user.admin ? 1 : 0);
+
+    try {
+        query.exec();
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+
+    return {};
+}
+
+std::expected<void, std::string> Database::tryAddList(const List& list) noexcept {
+    SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");
+
+    query.bind(1, list.name);
 
     try {
         query.exec();
