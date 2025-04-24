@@ -5,6 +5,8 @@
 
 namespace gq {
 
+constexpr int64_t kEmptyUserId = -1;
+
 struct User
 {
     int64_t user_id;

@@ -9,8 +9,7 @@
 namespace gq {
 
 inline void from_json(const nlohmann::json& j, gq::User& u) {
-    // j.at("user_id").get_to(u.user_id);
-    u.user_id = -1;
+    u.user_id = kEmptyUserId;
     j.at("telegram_id").get_to(u.telegram_id);
     j.at("first_name").get_to(u.first_name);
     j.at("surname").get_to(u.surname);
