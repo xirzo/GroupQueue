@@ -2,7 +2,7 @@
 
 namespace gq {
 
-std::optional<std::string> Database::init(std::filesystem::path db_path) noexcept {
+std::expected<void, std::string> Database::init(std::filesystem::path db_path) noexcept {
     try {
         db_ = std::make_unique<SQLite::Database>(
             db_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
@@ -13,10 +13,14 @@ std::optional<std::string> Database::init(std::filesystem::path db_path) noexcep
             "INTEGER UNIQUE, first_name TEXT, surname TEXT, second_name "
             "TEXT, admin INTEGER)");
 
-        return std::nullopt;
+        db_->exec(
+            "CREATE TABLE IF NOT EXISTS list(list_id INTEGER PRIMARY KEY, "
+            "name TEXT)");
+
+        return {};
     }
     catch (const SQLite::Exception& e) {
-        return e.what();
+        return std::unexpected(e.what());
     }
 }
 

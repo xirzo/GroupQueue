@@ -14,7 +14,7 @@ namespace gq {
 class Database
 {
 public:
-    std::optional<std::string> init(std::filesystem::path db_path) noexcept;
+    std::expected<void, std::string> init(std::filesystem::path db_path) noexcept;
     std::expected<void, std::string> tryAddUser(const User& user) noexcept;
 
 private:
@@ -28,7 +28,7 @@ std::expected<std::unique_ptr<Database>, std::string> makeDatabase(
     auto init_result = db->init(db_path);
 
     if (init_result) {
-        return std::unexpected(init_result.value());
+        return std::unexpected(init_result.error());
     }
 
     return std::move(db);
