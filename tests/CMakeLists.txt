@@ -12,9 +12,9 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(tests tests.cpp)
+add_executable(tests sqlite_tests.cpp)
 
-target_link_libraries(tests PRIVATE GTest::gtest_main)
+target_link_libraries(tests PRIVATE sqlite_repository GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(tests)
