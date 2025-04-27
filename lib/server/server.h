@@ -13,6 +13,21 @@ class Server
 public:
     Server(std::size_t port, std::shared_ptr<ListHolder> lh)
         : port_(port), lh_(std::move(lh)) {
+        CROW_ROUTE(app_, "/get_all_users").methods(crow::HTTPMethod::Get)([this]() {
+            auto get_result = lh_->tryGetAllUsers();
+
+            if (!get_result) {
+                return crow::response(400, get_result.error());
+            }
+            crow::json::wvalue j;
+
+            for (std::size_t i = 0; i < get_result.value().size(); ++i) {
+                j[i] = jsonFromUser(get_result.value().at(i));
+            }
+
+            return crow::response(200, j);
+        });
+
         CROW_ROUTE(app_, "/add_list/<string>")
             .methods(crow::HTTPMethod::Post)([this](std::string list_name) {
                 auto add_result = lh_->tryAddList(List(list_name));
@@ -32,10 +47,7 @@ public:
                     return crow::response(400, get_result.error());
                 }
 
-                crow::json::wvalue j;
-
-                j["list_id"] = get_result.value().list_id;
-                j["name"] = get_result.value().name;
+                crow::json::wvalue j = jsonFromList(get_result.value());
 
                 return crow::response(200, j);
             });
@@ -50,8 +62,7 @@ public:
             crow::json::wvalue j;
 
             for (std::size_t i = 0; i < get_result.value().size(); ++i) {
-                j[i]["list_id"] = get_result.value().at(i).list_id;
-                j[i]["name"] = get_result.value().at(i).name;
+                j[i] = jsonFromList(get_result.value().at(i));
             }
 
             return crow::response(200, j);
@@ -61,6 +72,24 @@ public:
     }
 
 private:
+    crow::json::wvalue jsonFromUser(const User& user) {
+        crow::json::wvalue j;
+        j["user_id"] = user.user_id;
+        j["telegram_id"] = user.telegram_id;
+        j["first_name"] = user.first_name;
+        j["surname"] = user.surname;
+        j["second_name"] = user.second_name;
+        j["admin"] = user.admin;
+        return j;
+    }
+
+    crow::json::wvalue jsonFromList(const List& list) {
+        crow::json::wvalue j;
+        j["list_id"] = list.list_id;
+        j["name"] = list.name;
+        return j;
+    }
+
     crow::SimpleApp app_;
     std::size_t port_;
     std::shared_ptr<ListHolder> lh_;

@@ -41,10 +41,39 @@ public:
         return {};
     }
 
+    std::expected<std::vector<User>, std::string> tryGetAllUsers() {
+        SQLite::Statement query(*db_, "SELECT * FROM user");
+
+        std::vector<User> users;
+
+        try {
+            while (query.executeStep()) {
+                users.emplace_back(query.getColumn(0), query.getColumn(1),
+                                   query.getColumn(2), query.getColumn(3),
+                                   query.getColumn(4), (int64_t)query.getColumn(5));
+            }
+
+            if (users.empty()) {
+                return std::unexpected("No users present");
+            }
+
+            return users;
+        }
+        catch (const std::exception& e) {
+            return std::unexpected(e.what());
+        }
+    }
+
     std::expected<void, std::string> tryAddList(const List& list) {
         SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");
 
         query.bind(1, list.name);
+
+        // auto add_result = addUsersToList(list);
+        //
+        // if (!add_result) {
+        //     return std::unexpected(add_result.error());
+        // }
 
         try {
             query.exec();
@@ -55,6 +84,21 @@ public:
 
         return {};
     }
+
+    // std::expected<void, std::string> tryAddShuffledList(const List& list) {
+    //     SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");
+    //
+    //     query.bind(1, list.name);
+    //
+    //     try {
+    //         query.exec();
+    //     }
+    //     catch (const std::exception& e) {
+    //         return std::unexpected(e.what());
+    //     }
+    //
+    //     return {};
+    // }
 
     std::expected<List, std::string> tryGetList(const std::string& list_name) {
         SQLite::Statement query(*db_, "SELECT * FROM list WHERE name = ?");
@@ -117,6 +161,22 @@ private:
             return std::unexpected(e.what());
         }
     }
+
+    // std::expected<void, std::string> addUsersToList(const List& list) {
+    //     SQLite::Statement query(
+    //         *db_, "INSERT INTO list_user (user_id, list_user_id) VALUES (?, ?)");
+    //
+    //     query.bind(1, list.name);
+    //
+    //     try {
+    //         query.exec();
+    //     }
+    //     catch (const std::exception& e) {
+    //         return std::unexpected(e.what());
+    //     }
+    //
+    //     return {};
+    // }
 
     std::expected<void, std::string> loadUsers() {
         try {
