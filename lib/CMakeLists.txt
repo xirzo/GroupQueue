@@ -1,3 +1,3 @@
-add_subdirectory(server)
-add_subdirectory(model)
-add_subdirectory(list_holder)
+add_subdirectory(application)
+add_subdirectory(domain)
+add_subdirectory(infrastructure)
