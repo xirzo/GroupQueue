@@ -28,6 +28,30 @@ public:
             return crow::response(200, j);
         });
 
+        CROW_ROUTE(app_, "/get_user/<int>")
+            .methods(crow::HTTPMethod::Get)([this](int64_t user_id) {
+                auto get_result = lh_->tryGetUser(user_id);
+
+                if (!get_result) {
+                    return crow::response(400, get_result.error());
+                }
+                crow::json::wvalue j = jsonFromUser(get_result.value());
+
+                return crow::response(200, j);
+            });
+
+        CROW_ROUTE(app_, "/get_user_by_telegram_id/<int>")
+            .methods(crow::HTTPMethod::Get)([this](int64_t telegram_id) {
+                auto get_result = lh_->tryGetUserByTelegramId(telegram_id);
+
+                if (!get_result) {
+                    return crow::response(400, get_result.error());
+                }
+                crow::json::wvalue j = jsonFromUser(get_result.value());
+
+                return crow::response(200, j);
+            });
+
         CROW_ROUTE(app_, "/add_list/<string>")
             .methods(crow::HTTPMethod::Post)([this](std::string list_name) {
                 auto add_result = lh_->tryAddList(List(list_name));
