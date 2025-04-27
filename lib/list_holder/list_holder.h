@@ -64,13 +64,34 @@ public:
         try {
             if (query.executeStep()) {
                 return List(query.getColumn(0), query.getColumn(1));
+            } else {
+                return std::unexpected("No list with name " + list_name);
             }
         }
         catch (const std::exception& e) {
             return std::unexpected(e.what());
         }
+    }
 
-        return std::unexpected("No list with name " + list_name);
+    std::expected<std::vector<List>, std::string> tryGetAllLists() {
+        SQLite::Statement query(*db_, "SELECT * FROM list");
+
+        std::vector<List> lists;
+
+        try {
+            while (query.executeStep()) {
+                lists.emplace_back(query.getColumn(0), query.getColumn(1));
+            }
+
+            if (lists.empty()) {
+                return std::unexpected("No lists present");
+            }
+
+            return lists;
+        }
+        catch (const std::exception& e) {
+            return std::unexpected(e.what());
+        }
     }
 
 private:

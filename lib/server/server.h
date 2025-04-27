@@ -35,12 +35,27 @@ public:
                 crow::json::wvalue j;
 
                 j["list_id"] = get_result.value().list_id;
-                std::cout << get_result.value().list_id << std::endl;
-
                 j["name"] = get_result.value().name;
 
                 return crow::response(200, j);
             });
+
+        CROW_ROUTE(app_, "/get_all_lists").methods(crow::HTTPMethod::Get)([this]() {
+            auto get_result = lh_->tryGetAllLists();
+
+            if (!get_result) {
+                return crow::response(400, get_result.error());
+            }
+
+            crow::json::wvalue j;
+
+            for (std::size_t i = 0; i < get_result.value().size(); ++i) {
+                j[i]["list_id"] = get_result.value().at(i).list_id;
+                j[i]["name"] = get_result.value().at(i).name;
+            }
+
+            return crow::response(200, j);
+        });
 
         app_.port(port_).multithreaded().run();
     }
