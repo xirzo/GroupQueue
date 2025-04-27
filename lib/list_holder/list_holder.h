@@ -6,10 +6,22 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <vector>
 
 #include "list.h"
 #include "user.h"
+
+inline int rand_comparison(const void* a, const void* b) {
+    (void)a;
+    (void)b;
+
+    return rand() % 2 ? +1 : -1;
+}
+
+inline void shuffle(void* base, size_t nmemb, size_t size) {
+    qsort(base, nmemb, size, rand_comparison);
+}
 
 class ListHolder
 {
@@ -69,14 +81,14 @@ public:
 
         query.bind(1, list.name);
 
-        // auto add_result = addUsersToList(list);
-        //
-        // if (!add_result) {
-        //     return std::unexpected(add_result.error());
-        // }
-
         try {
-            query.exec();
+            int64_t added_list_id = query.exec();
+
+            auto add_result = addUsersToList(List(added_list_id, list.name));
+
+            if (!add_result) {
+                return std::unexpected(add_result.error());
+            }
         }
         catch (const std::exception& e) {
             return std::unexpected(e.what());
@@ -84,21 +96,6 @@ public:
 
         return {};
     }
-
-    // std::expected<void, std::string> tryAddShuffledList(const List& list) {
-    //     SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");
-    //
-    //     query.bind(1, list.name);
-    //
-    //     try {
-    //         query.exec();
-    //     }
-    //     catch (const std::exception& e) {
-    //         return std::unexpected(e.what());
-    //     }
-    //
-    //     return {};
-    // }
 
     std::expected<List, std::string> tryGetList(const std::string& list_name) {
         SQLite::Statement query(*db_, "SELECT * FROM list WHERE name = ?");
@@ -153,7 +150,7 @@ private:
 
             db_->exec(
                 "CREATE TABLE IF NOT EXISTS list_user(list_user_id INTEGER PRIMARY KEY, "
-                "user_id INTEGER, list_user_order INTEGER)");
+                "list_id INTEGER, user_id INTEGER, list_user_order INTEGER)");
 
             return {};
         }
@@ -162,21 +159,48 @@ private:
         }
     }
 
-    // std::expected<void, std::string> addUsersToList(const List& list) {
-    //     SQLite::Statement query(
-    //         *db_, "INSERT INTO list_user (user_id, list_user_id) VALUES (?, ?)");
-    //
-    //     query.bind(1, list.name);
-    //
-    //     try {
-    //         query.exec();
-    //     }
-    //     catch (const std::exception& e) {
-    //         return std::unexpected(e.what());
-    //     }
-    //
-    //     return {};
-    // }
+    std::expected<void, std::string> addUsersToList(const List& list) {
+        auto get_result = tryGetAllUsers();
+
+        if (!get_result) {
+            return std::unexpected(get_result.error());
+        }
+
+        const std::vector<User>& users = get_result.value();
+
+        std::vector<int64_t> order(users.size());
+
+        for (size_t i = 0; i < users.size(); ++i) {
+            order[i] = static_cast<int64_t>(i);
+        }
+
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(order.begin(), order.end(), g);
+
+        try {
+            SQLite::Transaction transaction(*db_);
+            SQLite::Statement query(*db_,
+                                    "INSERT INTO list_user (list_id, user_id, "
+                                    "list_user_order) VALUES (?, ?, ?)");
+
+            for (size_t i = 0; i < users.size(); ++i) {
+                const User& user = users[i];
+                query.bind(1, list.list_id);
+                query.bind(2, user.user_id);
+                query.bind(3, order[i]);
+                query.exec();
+                query.reset();
+            }
+
+            transaction.commit();
+        }
+        catch (const std::exception& e) {
+            return std::unexpected(e.what());
+        }
+
+        return {};
+    }
 
     std::expected<void, std::string> loadUsers() {
         try {
