@@ -90,6 +90,7 @@ private:
         return j;
     }
 
+private:
     crow::SimpleApp app_;
     std::size_t port_;
     std::shared_ptr<ListHolder> lh_;

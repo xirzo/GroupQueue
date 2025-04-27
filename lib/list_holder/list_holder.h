@@ -12,17 +12,6 @@
 #include "list.h"
 #include "user.h"
 
-inline int rand_comparison(const void* a, const void* b) {
-    (void)a;
-    (void)b;
-
-    return rand() % 2 ? +1 : -1;
-}
-
-inline void shuffle(void* base, size_t nmemb, size_t size) {
-    qsort(base, nmemb, size, rand_comparison);
-}
-
 class ListHolder
 {
 public:
@@ -76,7 +65,7 @@ public:
         }
     }
 
-    std::expected<void, std::string> tryAddList(const List& list) {
+    std::expected<int64_t, std::string> tryAddList(const List& list) {
         SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");
 
         query.bind(1, list.name);
@@ -89,12 +78,12 @@ public:
             if (!add_result) {
                 return std::unexpected(add_result.error());
             }
+
+            return added_list_id;
         }
         catch (const std::exception& e) {
             return std::unexpected(e.what());
         }
-
-        return {};
     }
 
     std::expected<List, std::string> tryGetList(const std::string& list_name) {
@@ -222,7 +211,7 @@ private:
         }
     }
 
-    std::expected<void, std::string> tryAddUser(const User& user) {
+    std::expected<int64_t, std::string> tryAddUser(const User& user) {
         if (user.user_id != kEmptyUserId) {
             return std::unexpected("Trying to add user, whos user_id != kEmptyUserId");
         }
@@ -238,13 +227,12 @@ private:
         query.bind(5, user.admin ? 1 : 0);
 
         try {
-            query.exec();
+            int64_t added_user_id = query.exec();
+            return added_user_id;
         }
         catch (const std::exception& e) {
             return std::unexpected(e.what());
         }
-
-        return {};
     }
 
 private:
