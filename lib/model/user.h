@@ -14,6 +14,15 @@ struct User
     std::string second_name;
     bool admin;
 
+    User(int64_t user_id, int64_t telegram_id, std::string first_name,
+         std::string surname, std::string second_name, bool admin)
+        : user_id(user_id),
+          telegram_id(telegram_id),
+          first_name(std::move(first_name)),
+          surname(std::move(surname)),
+          second_name(std::move(second_name)),
+          admin(admin) {}
+
     User(int64_t telegram_id, std::string first_name, std::string surname,
          std::string second_name, bool admin)
         : user_id(kEmptyUserId),

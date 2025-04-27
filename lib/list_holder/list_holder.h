@@ -56,6 +56,23 @@ public:
         return {};
     }
 
+    std::expected<List, std::string> tryGetList(const std::string& list_name) {
+        SQLite::Statement query(*db_, "SELECT * FROM list WHERE name = ?");
+
+        query.bind(1, list_name);
+
+        try {
+            if (query.executeStep()) {
+                return List(query.getColumn(0), query.getColumn(1));
+            }
+        }
+        catch (const std::exception& e) {
+            return std::unexpected(e.what());
+        }
+
+        return std::unexpected("No list with name " + list_name);
+    }
+
 private:
     std::expected<void, std::string> createTables() {
         try {

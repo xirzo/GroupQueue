@@ -10,6 +10,7 @@ struct List
     int64_t list_id;
     std::string name;
 
+    List(int64_t list_id, const std::string& name) : list_id(list_id), name(name) {}
     List(const std::string& name) : list_id(kEmptyListId), name(name) {}
 };
 
