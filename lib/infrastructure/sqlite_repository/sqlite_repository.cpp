@@ -402,3 +402,24 @@ std::expected<ListUser, std::string> SqliteRepository::tryGetListUser(int64_t li
         return std::unexpected(e.what());
     }
 }
+
+std::expected<User, std::string> SqliteRepository::tryGetUserByTelegramId(
+    int64_t telegram_id) {
+    SQLite::Statement query(*db_, "SELECT * FROM user WHERE telegram_id = ?");
+
+    query.bind(1, telegram_id);
+
+    try {
+        if (query.executeStep()) {
+            return User(query.getColumn(0), query.getColumn(1), query.getColumn(2),
+                        query.getColumn(3), query.getColumn(4),
+                        (int64_t)query.getColumn(5));
+        }
+
+        return std::unexpected("No user with telegram_id: " +
+                               std::to_string(telegram_id));
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+}

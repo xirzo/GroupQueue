@@ -30,6 +30,9 @@ public:
                                                           int64_t first_user_id,
                                                           int64_t second_user_id) = 0;
 
+    virtual std::expected<User, std::string> tryGetUserByTelegramId(
+        int64_t telegram_id) = 0;
+
     virtual std::expected<std::vector<ListUser>, std::string> tryGetListUsers(
         int64_t list_id) = 0;
 

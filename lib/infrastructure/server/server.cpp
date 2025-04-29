@@ -95,6 +95,17 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
             return crow::response(200, "Successfully swapped users!");
         });
 
+    CROW_ROUTE(app_, "/get_user_by_telegram_id/<int>")
+        .methods(crow::HTTPMethod::Post)([this](int64_t telegram_id) {
+            auto get_result = repository_->tryGetUserByTelegramId(telegram_id);
+
+            if (!get_result) {
+                return crow::response(400, get_result.error());
+            }
+
+            return crow::response(200, jsonFromUser(get_result.value()));
+        });
+
     CROW_ROUTE(app_, "/get_list_users/<int>")
         .methods(crow::HTTPMethod::Get)([this](int64_t list_id) {
             auto get_result = repository_->tryGetListUsers(list_id);

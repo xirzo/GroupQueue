@@ -32,6 +32,8 @@ public:
 
     std::expected<ListUser, std::string> tryGetListUser(int64_t list_id, int64_t user_id);
 
+    std::expected<User, std::string> tryGetUserByTelegramId(int64_t telegram_id) override;
+
     std::expected<std::vector<ListUser>, std::string> tryGetListUsers(
         int64_t list_id) override;
 
