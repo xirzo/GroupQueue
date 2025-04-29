@@ -18,7 +18,6 @@ public:
     // TODO: swap users
 
     virtual ~Repository() = default;
-    // virtual std::expected<User, std::string> tryGetUser(int64_t user_id) = 0;
     virtual std::expected<std::vector<User>, std::string> tryGetAllUsers() = 0;
     virtual std::expected<User, std::string> tryGetUser(int64_t telegram_id) = 0;
     virtual std::expected<int64_t, std::string> tryAddList(const List& list) = 0;
