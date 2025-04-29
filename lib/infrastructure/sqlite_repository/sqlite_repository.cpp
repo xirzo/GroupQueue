@@ -182,10 +182,6 @@ std::expected<std::vector<List>, std::string> SqliteRepository::tryGetAllLists()
             lists.emplace_back(query.getColumn(0), query.getColumn(1));
         }
 
-        if (lists.empty()) {
-            return std::unexpected("No lists present");
-        }
-
         return lists;
     }
     catch (const std::exception& e) {
@@ -321,10 +317,6 @@ std::expected<std::vector<ListUser>, std::string> SqliteRepository::tryGetListUs
                 list_user_query.getColumn(2), list_user_query.getColumn(3));
         }
 
-        if (list_users.empty()) {
-            return std::unexpected("No list users present");
-        }
-
         return list_users;
     }
     catch (const std::exception& e) {
@@ -366,10 +358,6 @@ std::expected<std::vector<User>, std::string> SqliteRepository::tryGetUsers(
                     get_user_query.getColumn(4), (int64_t)get_user_query.getColumn(5));
             }
             get_user_query.reset();
-        }
-
-        if (users.empty()) {
-            return std::unexpected("No users present");
         }
 
         return users;
