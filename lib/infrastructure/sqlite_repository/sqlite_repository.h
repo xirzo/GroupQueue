@@ -24,6 +24,7 @@ public:
     std::expected<User, std::string> tryGetUser(int64_t telegram_id) override;
     std::expected<int64_t, std::string> tryAddList(const List& list) override;
     std::expected<void, std::string> tryRemoveList(const std::string& list_name) override;
+    std::expected<void, std::string> tryRemoveList(int64_t list_id) override;
     std::expected<List, std::string> tryGetList(const std::string& list_name) override;
     std::expected<List, std::string> tryGetList(int64_t list_id) override;
     std::expected<std::vector<List>, std::string> tryGetAllLists() override;

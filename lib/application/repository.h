@@ -20,8 +20,10 @@ public:
     virtual std::expected<std::vector<User>, std::string> tryGetAllUsers() = 0;
     virtual std::expected<User, std::string> tryGetUser(int64_t telegram_id) = 0;
     virtual std::expected<int64_t, std::string> tryAddList(const List& list) = 0;
+    // TODO: remove this
     virtual std::expected<void, std::string> tryRemoveList(
         const std::string& list_name) = 0;
+    virtual std::expected<void, std::string> tryRemoveList(int64_t list_id) = 0;
     virtual std::expected<List, std::string> tryGetList(const std::string& list_name) = 0;
     virtual std::expected<List, std::string> tryGetList(int64_t list_id) = 0;
     virtual std::expected<std::vector<List>, std::string> tryGetAllLists() = 0;
