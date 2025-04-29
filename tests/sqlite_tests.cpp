@@ -16,8 +16,8 @@ class SqliteRepositoryTest : public ::testing::Test
 {
 protected:
     void SetUp() override {
-        users = {User(kEmptyUserId, 100, "Alice", "Smith", "X", false),
-                 User(kEmptyUserId, 101, "Bob", "Jones", "", true)};
+        users = {User(100, "Alice", "Smith", "X", false),
+                 User(101, "Bob", "Jones", "", true)};
         db = createInMemoryDb();
         repo = std::make_unique<SqliteRepository>(std::move(db), users);
         ASSERT_TRUE(repo->init());
@@ -44,13 +44,25 @@ TEST_F(SqliteRepositoryTest, CanGetUserByTelegramId) {
 }
 
 TEST_F(SqliteRepositoryTest, CanAddAndGetList) {
-    List mylist(kEmptyListId, "testlist");
+    List mylist("testlist");
     auto add_res = repo->tryAddList(mylist);
     ASSERT_TRUE(add_res.has_value());
 
     auto get_res = repo->tryGetList("testlist");
     ASSERT_TRUE(get_res.has_value());
     EXPECT_EQ(get_res->name, "testlist");
+}
+
+TEST_F(SqliteRepositoryTest, CanRemoveList) {
+    List mylist("testlist");
+    auto add_res = repo->tryAddList(mylist);
+    ASSERT_TRUE(add_res.has_value());
+
+    auto delete_res = repo->tryRemoveList("testlist");
+    ASSERT_TRUE(delete_res.has_value());
+
+    auto get_res = repo->tryGetList("testlist");
+    ASSERT_FALSE(get_res.has_value());
 }
 
 TEST_F(SqliteRepositoryTest, GetAllListsEmptyInitially) {

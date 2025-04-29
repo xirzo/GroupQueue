@@ -125,6 +125,37 @@ std::expected<int64_t, std::string> SqliteRepository::tryAddList(const List& lis
     }
 }
 
+std::expected<void, std::string> SqliteRepository::tryRemoveList(
+    const std::string& list_name) {
+    auto get_result = tryGetList(list_name);
+
+    if (!get_result) {
+        return std::unexpected(get_result.error());
+    }
+
+    List& list = get_result.value();
+
+    SQLite::Statement list_query(*db_, "DELETE FROM list WHERE name = ?");
+    list_query.bind(1, list.name);
+
+    SQLite::Statement user_query(*db_, "DELETE FROM list_user WHERE list_id = ?");
+    user_query.bind(1, list.list_id);
+
+    try {
+        SQLite::Transaction transaction(*db_);
+
+        list_query.exec();
+
+        user_query.exec();
+
+        transaction.commit();
+        return {};
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+}
+
 std::expected<List, std::string> SqliteRepository::tryGetList(
     const std::string& list_name) {
     SQLite::Statement query(*db_, "SELECT * FROM list WHERE name = ?");

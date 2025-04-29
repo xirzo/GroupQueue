@@ -53,6 +53,17 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
             return crow::response(200, "Successfully created new list!");
         });
 
+    CROW_ROUTE(app_, "/remove_list/<string>")
+        .methods(crow::HTTPMethod::Delete)([this](std::string list_name) {
+            auto remove_result = repository_->tryRemoveList(list_name);
+
+            if (!remove_result) {
+                return crow::response(400, remove_result.error());
+            }
+
+            return crow::response(200, "Successfully removed list!");
+        });
+
     CROW_ROUTE(app_, "/get_list/<string>")
         .methods(crow::HTTPMethod::Get)([this](std::string list_name) {
             auto get_result = repository_->tryGetList(list_name);
