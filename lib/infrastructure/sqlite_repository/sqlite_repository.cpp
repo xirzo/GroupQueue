@@ -1,5 +1,6 @@
 #include "sqlite_repository.h"
 
+#include <algorithm>
 #include <iostream>
 #include <random>
 
