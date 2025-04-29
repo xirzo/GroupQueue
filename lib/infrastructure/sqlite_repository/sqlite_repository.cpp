@@ -154,6 +154,23 @@ std::expected<List, std::string> SqliteRepository::tryGetList(
     }
 }
 
+std::expected<List, std::string> SqliteRepository::tryGetList(int64_t list_id) {
+    SQLite::Statement query(*db_, "SELECT * FROM list WHERE list_id = ?");
+
+    query.bind(1, list_id);
+
+    try {
+        if (query.executeStep()) {
+            return List(query.getColumn(0), query.getColumn(1));
+        } else {
+            return std::unexpected("No list with id " + std::to_string(list_id));
+        }
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+}
+
 std::expected<std::vector<List>, std::string> SqliteRepository::tryGetAllLists() {
     SQLite::Statement query(*db_, "SELECT * FROM list");
 
@@ -279,6 +296,53 @@ std::expected<void, std::string> SqliteRepository::addUsersToList(const List& li
     }
 
     return {};
+}
+
+std::expected<std::vector<User>, std::string> SqliteRepository::tryGetListUsers(
+    int64_t list_id) {
+    auto get_result = tryGetList(list_id);
+
+    if (!get_result) {
+        return std::unexpected(get_result.error());
+    }
+
+    List& list = get_result.value();
+
+    SQLite::Statement list_user_query(*db_, "SELECT * FROM list_user WHERE list_id = ?");
+    list_user_query.bind(1, list.list_id);
+
+    std::vector<ListUser> list_users;
+    std::vector<User> users;
+
+    try {
+        while (list_user_query.executeStep()) {
+            list_users.emplace_back(
+                list_user_query.getColumn(0), list_user_query.getColumn(1),
+                list_user_query.getColumn(2), list_user_query.getColumn(3));
+        }
+
+        SQLite::Statement get_user_query(*db_, "SELECT * FROM user WHERE user_id = ?");
+
+        for (const ListUser& lu : list_users) {
+            get_user_query.bind(1, lu.user_id);
+            if (get_user_query.executeStep()) {
+                users.emplace_back(
+                    get_user_query.getColumn(0), get_user_query.getColumn(1),
+                    get_user_query.getColumn(2), get_user_query.getColumn(3),
+                    get_user_query.getColumn(4), (int64_t)get_user_query.getColumn(5));
+            }
+            get_user_query.reset();
+        }
+
+        if (users.empty()) {
+            return std::unexpected("No users present");
+        }
+
+        return users;
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
 }
 
 std::expected<int64_t, std::string> SqliteRepository::tryAddUser(const User& user) {
