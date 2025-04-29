@@ -85,24 +85,24 @@ std::expected<User, std::string> SqliteRepository::tryGetUserByTelegramId(
     }
 }
 
-std::expected<User, std::string> SqliteRepository::tryGetUser(int64_t user_id) {
-    SQLite::Statement query(*db_, "SELECT * FROM user WHERE user_id = ?");
-
-    query.bind(1, user_id);
-
-    try {
-        if (query.executeStep()) {
-            return User(query.getColumn(0), query.getColumn(1), query.getColumn(2),
-                        query.getColumn(3), query.getColumn(4),
-                        (int64_t)query.getColumn(5));
-        }
-
-        return std::unexpected("No user with id : " + std::to_string(user_id));
-    }
-    catch (const std::exception& e) {
-        return std::unexpected(e.what());
-    }
-}
+// std::expected<User, std::string> SqliteRepository::tryGetUser(int64_t user_id) {
+//     SQLite::Statement query(*db_, "SELECT * FROM user WHERE user_id = ?");
+//
+//     query.bind(1, user_id);
+//
+//     try {
+//         if (query.executeStep()) {
+//             return User(query.getColumn(0), query.getColumn(1), query.getColumn(2),
+//                         query.getColumn(3), query.getColumn(4),
+//                         (int64_t)query.getColumn(5));
+//         }
+//
+//         return std::unexpected("No user with id : " + std::to_string(user_id));
+//     }
+//     catch (const std::exception& e) {
+//         return std::unexpected(e.what());
+//     }
+// }
 
 std::expected<int64_t, std::string> SqliteRepository::tryAddList(const List& list) {
     SQLite::Statement query(*db_, "INSERT INTO list (name) VALUES (?)");

@@ -17,7 +17,7 @@ public:
     // TODO: remove admin
 
     virtual ~Repository() = default;
-    virtual std::expected<User, std::string> tryGetUser(int64_t user_id) = 0;
+    // virtual std::expected<User, std::string> tryGetUser(int64_t user_id) = 0;
     virtual std::expected<std::vector<User>, std::string> tryGetAllUsers() = 0;
     virtual std::expected<User, std::string> tryGetUserByTelegramId(
         int64_t telegram_id) = 0;
@@ -26,6 +26,9 @@ public:
         const std::string& list_name) = 0;
     virtual std::expected<List, std::string> tryGetList(const std::string& list_name) = 0;
     virtual std::expected<std::vector<List>, std::string> tryGetAllLists() = 0;
+
+    virtual std::expected<int64_t, std::string> trySwapUsers(
+        const std::string& list_name) = 0;
 };
 
 #endif  // !REPOSITORY_H

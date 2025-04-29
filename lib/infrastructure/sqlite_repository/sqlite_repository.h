@@ -19,7 +19,7 @@ public:
 
     std::expected<void, std::string> init();
 
-    std::expected<User, std::string> tryGetUser(int64_t user_id) override;
+    // std::expected<User, std::string> tryGetUser(int64_t user_id) override;
     std::expected<std::vector<User>, std::string> tryGetAllUsers() override;
     std::expected<User, std::string> tryGetUserByTelegramId(int64_t telegram_id) override;
     std::expected<int64_t, std::string> tryAddList(const List& list) override;
