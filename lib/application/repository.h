@@ -26,9 +26,9 @@ public:
     virtual std::expected<List, std::string> tryGetList(int64_t list_id) = 0;
     virtual std::expected<std::vector<List>, std::string> tryGetAllLists() = 0;
 
-    virtual std::expected<void, std::string> trySwapUsers(
-        const std::string& list_name, int64_t sender_telegram_id,
-        int64_t receiver_telegram_id) = 0;
+    virtual std::expected<void, std::string> trySwapUsers(int64_t list_id,
+                                                          int64_t first_user_id,
+                                                          int64_t second_user_id) = 0;
 
     virtual std::expected<std::vector<ListUser>, std::string> tryGetListUsers(
         int64_t list_id) = 0;

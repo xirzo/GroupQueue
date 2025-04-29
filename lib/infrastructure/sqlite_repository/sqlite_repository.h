@@ -27,9 +27,8 @@ public:
     std::expected<List, std::string> tryGetList(const std::string& list_name) override;
     std::expected<List, std::string> tryGetList(int64_t list_id) override;
     std::expected<std::vector<List>, std::string> tryGetAllLists() override;
-    std::expected<void, std::string> trySwapUsers(const std::string& list_name,
-                                                  int64_t sender_telegram_id,
-                                                  int64_t receiver_telegram_id) override;
+    std::expected<void, std::string> trySwapUsers(int64_t list_id, int64_t first_user_id,
+                                                  int64_t second_user_id) override;
 
     std::expected<ListUser, std::string> tryGetListUser(int64_t list_id, int64_t user_id);
 

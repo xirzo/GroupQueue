@@ -74,7 +74,7 @@ TEST_F(SqliteRepositoryTest, SwapUsers) {
     List mylist("testlist");
     auto add_res = repo->tryAddList(mylist);
 
-    auto result = repo->trySwapUsers("testlist", 100, 101);
+    auto result = repo->trySwapUsers(1, 100, 101);
 
     ASSERT_TRUE(result.has_value());
 

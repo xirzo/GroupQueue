@@ -81,11 +81,11 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
         return crow::response(200, j);
     });
 
-    CROW_ROUTE(app_, "/swap/<string>/<int>/<int>")
-        .methods(crow::HTTPMethod::Post)([this](std::string list_name,
+    CROW_ROUTE(app_, "/swap/<int>/<int>/<int>")
+        .methods(crow::HTTPMethod::Post)([this](int64_t list_id,
                                                 int64_t sender_telegram_id,
                                                 int64_t receiver_telegram_id) {
-            auto swap_result = repository_->trySwapUsers(list_name, sender_telegram_id,
+            auto swap_result = repository_->trySwapUsers(list_id, sender_telegram_id,
                                                          receiver_telegram_id);
 
             if (!swap_result) {

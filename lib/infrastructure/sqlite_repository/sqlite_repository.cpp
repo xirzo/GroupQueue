@@ -190,60 +190,49 @@ std::expected<std::vector<List>, std::string> SqliteRepository::tryGetAllLists()
     }
 }
 
-std::expected<void, std::string> SqliteRepository::trySwapUsers(
-    const std::string& list_name, int64_t sender_telegram_id,
-    int64_t receiver_telegram_id) {
-    auto senderResult = tryGetUser(sender_telegram_id);
-    if (!senderResult) {
-        return std::unexpected(senderResult.error());
-    }
-    User& sender = senderResult.value();
-
-    auto receiverResult = tryGetUser(receiver_telegram_id);
-    if (!receiverResult) {
-        return std::unexpected(receiverResult.error());
-    }
-    User& receiver = receiverResult.value();
-
-    auto listResult = tryGetList(list_name);
+std::expected<void, std::string> SqliteRepository::trySwapUsers(int64_t list_id,
+                                                                int64_t first_user_id,
+                                                                int64_t second_user_id) {
+    auto listResult = tryGetList(list_id);
     if (!listResult) {
         return std::unexpected(listResult.error());
     }
 
-    List& list = listResult.value();
-
-    auto senderListUserResult = tryGetListUser(list.list_id, sender.user_id);
-    if (!senderListUserResult) {
-        return std::unexpected("Sender is not in the list");
+    auto firstUserListUserResult = tryGetListUser(list_id, first_user_id);
+    if (!firstUserListUserResult) {
+        return std::unexpected("First user is not in the list");
     }
-    ListUser& senderListUser = senderListUserResult.value();
+    ListUser& firstUserListUser = firstUserListUserResult.value();
 
-    auto receiverListUserResult = tryGetListUser(list.list_id, receiver.user_id);
-    if (!receiverListUserResult) {
-        return std::unexpected("Receiver is not in the list");
+    auto secondUserListUserResult = tryGetListUser(list_id, second_user_id);
+    if (!secondUserListUserResult) {
+        return std::unexpected("Second user is not in the list");
     }
-    ListUser& receiverListUser = receiverListUserResult.value();
+    ListUser& secondUserListUser = secondUserListUserResult.value();
 
     try {
         SQLite::Transaction transaction(*db_);
 
-        int sender_order = senderListUser.list_user_order;
-        int receiver_order = receiverListUser.list_user_order;
+        int first_user_order = firstUserListUser.list_user_order;
+        int second_user_order = secondUserListUser.list_user_order;
 
-        SQLite::Statement updateQuery(
+        SQLite::Statement updateFirstQuery(
             *db_,
             "UPDATE list_user SET list_user_order = ? WHERE list_id = ? AND user_id = ?");
 
-        updateQuery.bind(1, receiver_order);
-        updateQuery.bind(2, list.list_id);
-        updateQuery.bind(3, sender.user_id);
-        updateQuery.exec();
+        updateFirstQuery.bind(1, second_user_order);
+        updateFirstQuery.bind(2, list_id);
+        updateFirstQuery.bind(3, first_user_id);
+        updateFirstQuery.exec();
 
-        updateQuery.reset();
-        updateQuery.bind(1, sender_order);
-        updateQuery.bind(2, list.list_id);
-        updateQuery.bind(3, receiver.user_id);
-        updateQuery.exec();
+        SQLite::Statement updateSecondQuery(
+            *db_,
+            "UPDATE list_user SET list_user_order = ? WHERE list_id = ? AND user_id = ?");
+
+        updateSecondQuery.bind(1, first_user_order);
+        updateSecondQuery.bind(2, list_id);
+        updateSecondQuery.bind(3, second_user_id);
+        updateSecondQuery.exec();
 
         transaction.commit();
         return {};
