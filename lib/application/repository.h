@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "list.h"
+#include "list_user.h"
 #include "user.h"
 
 class Repository
@@ -29,7 +30,10 @@ public:
         const std::string& list_name, int64_t sender_telegram_id,
         int64_t receiver_telegram_id) = 0;
 
-    virtual std::expected<std::vector<User>, std::string> tryGetListUsers(
+    virtual std::expected<std::vector<ListUser>, std::string> tryGetListUsers(
+        int64_t list_id) = 0;
+
+    virtual std::expected<std::vector<User>, std::string> tryGetUsers(
         int64_t list_id) = 0;
 };
 

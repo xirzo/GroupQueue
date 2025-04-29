@@ -106,6 +106,23 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
             crow::json::wvalue j;
 
             for (std::size_t i = 0; i < get_result.value().size(); ++i) {
+                j[i] = jsonFromListUser(get_result.value().at(i));
+            }
+
+            return crow::response(200, j);
+        });
+
+    CROW_ROUTE(app_, "/get_users/<int>")
+        .methods(crow::HTTPMethod::Get)([this](int64_t list_id) {
+            auto get_result = repository_->tryGetUsers(list_id);
+
+            if (!get_result) {
+                return crow::response(400, get_result.error());
+            }
+
+            crow::json::wvalue j;
+
+            for (std::size_t i = 0; i < get_result.value().size(); ++i) {
                 j[i] = jsonFromUser(get_result.value().at(i));
             }
 
@@ -123,6 +140,15 @@ crow::json::wvalue Server::jsonFromUser(const User& user) {
     j["surname"] = user.surname;
     j["second_name"] = user.second_name;
     j["admin"] = user.admin;
+    return j;
+}
+
+crow::json::wvalue Server::jsonFromListUser(const ListUser& list_user) {
+    crow::json::wvalue j;
+    j["list_user_id"] = list_user.list_user_id;
+    j["list_id"] = list_user.list_id;
+    j["user_id"] = list_user.user_id;
+    j["list_user_order"] = list_user.list_user_order;
     return j;
 }
 

@@ -33,8 +33,10 @@ public:
 
     std::expected<ListUser, std::string> tryGetListUser(int64_t list_id, int64_t user_id);
 
-    std::expected<std::vector<User>, std::string> tryGetListUsers(
+    std::expected<std::vector<ListUser>, std::string> tryGetListUsers(
         int64_t list_id) override;
+
+    std::expected<std::vector<User>, std::string> tryGetUsers(int64_t list_id) override;
 
 private:
     std::expected<void, std::string> addUsersToList(const List& list);

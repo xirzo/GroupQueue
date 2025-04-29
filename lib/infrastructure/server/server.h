@@ -17,6 +17,7 @@ public:
 private:
     crow::json::wvalue jsonFromUser(const User& user);
     crow::json::wvalue jsonFromList(const List& list);
+    crow::json::wvalue jsonFromListUser(const ListUser& list_user);
 
 private:
     crow::SimpleApp app_;
