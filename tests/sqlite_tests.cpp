@@ -58,7 +58,7 @@ TEST_F(SqliteRepositoryTest, CanRemoveList) {
     auto add_res = repo->tryAddList(mylist);
     ASSERT_TRUE(add_res.has_value());
 
-    auto delete_res = repo->tryRemoveList("testlist");
+    auto delete_res = repo->tryRemoveList(add_res.value());
     ASSERT_TRUE(delete_res.has_value());
 
     auto get_res = repo->tryGetList("testlist");
