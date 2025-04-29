@@ -64,8 +64,7 @@ std::expected<std::vector<User>, std::string> SqliteRepository::tryGetAllUsers()
     }
 }
 
-std::expected<User, std::string> SqliteRepository::tryGetUserByTelegramId(
-    int64_t telegram_id) {
+std::expected<User, std::string> SqliteRepository::tryGetUser(int64_t telegram_id) {
     SQLite::Statement query(*db_, "SELECT * FROM user WHERE telegram_id = ?");
 
     query.bind(1, telegram_id);
@@ -195,6 +194,69 @@ std::expected<std::vector<List>, std::string> SqliteRepository::tryGetAllLists()
     }
 }
 
+std::expected<void, std::string> SqliteRepository::trySwapUsers(
+    const std::string& list_name, int64_t sender_telegram_id,
+    int64_t receiver_telegram_id) {
+    auto senderResult = tryGetUser(sender_telegram_id);
+    if (!senderResult) {
+        return std::unexpected(senderResult.error());
+    }
+    User& sender = senderResult.value();
+
+    auto receiverResult = tryGetUser(receiver_telegram_id);
+    if (!receiverResult) {
+        return std::unexpected(receiverResult.error());
+    }
+    User& receiver = receiverResult.value();
+
+    auto listResult = tryGetList(list_name);
+    if (!listResult) {
+        return std::unexpected(listResult.error());
+    }
+
+    List& list = listResult.value();
+
+    auto senderListUserResult = tryGetListUser(list.list_id, sender.user_id);
+    if (!senderListUserResult) {
+        return std::unexpected("Sender is not in the list");
+    }
+    ListUser& senderListUser = senderListUserResult.value();
+
+    auto receiverListUserResult = tryGetListUser(list.list_id, receiver.user_id);
+    if (!receiverListUserResult) {
+        return std::unexpected("Receiver is not in the list");
+    }
+    ListUser& receiverListUser = receiverListUserResult.value();
+
+    try {
+        SQLite::Transaction transaction(*db_);
+
+        int sender_order = senderListUser.list_user_order;
+        int receiver_order = receiverListUser.list_user_order;
+
+        SQLite::Statement updateQuery(
+            *db_,
+            "UPDATE list_user SET list_user_order = ? WHERE list_id = ? AND user_id = ?");
+
+        updateQuery.bind(1, receiver_order);
+        updateQuery.bind(2, list.list_id);
+        updateQuery.bind(3, sender.user_id);
+        updateQuery.exec();
+
+        updateQuery.reset();
+        updateQuery.bind(1, sender_order);
+        updateQuery.bind(2, list.list_id);
+        updateQuery.bind(3, receiver.user_id);
+        updateQuery.exec();
+
+        transaction.commit();
+        return {};
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+}
+
 std::expected<void, std::string> SqliteRepository::addUsersToList(const List& list) {
     auto get_result = tryGetAllUsers();
 
@@ -256,6 +318,28 @@ std::expected<int64_t, std::string> SqliteRepository::tryAddUser(const User& use
     try {
         int64_t added_user_id = query.exec();
         return added_user_id;
+    }
+    catch (const std::exception& e) {
+        return std::unexpected(e.what());
+    }
+}
+
+std::expected<ListUser, std::string> SqliteRepository::tryGetListUser(int64_t list_id,
+                                                                      int64_t user_id) {
+    SQLite::Statement query(*db_,
+                            "SELECT * FROM list_user WHERE (list_id, user_id) = (?, ?)");
+
+    query.bind(1, list_id);
+    query.bind(2, user_id);
+
+    try {
+        if (query.executeStep()) {
+            return ListUser(query.getColumn(0), query.getColumn(1), query.getColumn(2),
+                            query.getColumn(3));
+        }
+
+        return std::unexpected("No list user with user_id: " + std::to_string(user_id) +
+                               " in list with id: " + std::to_string(list_id));
     }
     catch (const std::exception& e) {
         return std::unexpected(e.what());

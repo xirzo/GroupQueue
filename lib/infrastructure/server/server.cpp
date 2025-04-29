@@ -32,7 +32,7 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
 
     CROW_ROUTE(app_, "/get_user_by_telegram_id/<int>")
         .methods(crow::HTTPMethod::Get)([this](int64_t telegram_id) {
-            auto get_result = repository_->tryGetUserByTelegramId(telegram_id);
+            auto get_result = repository_->tryGetUser(telegram_id);
 
             if (!get_result) {
                 return crow::response(400, get_result.error());
@@ -92,6 +92,20 @@ Server::Server(std::size_t port, std::shared_ptr<Repository> repository)
 
         return crow::response(200, j);
     });
+
+    CROW_ROUTE(app_, "/swap/<string>/<int>/<int>")
+        .methods(crow::HTTPMethod::Post)([this](std::string list_name,
+                                                int64_t sender_telegram_id,
+                                                int64_t receiver_telegram_id) {
+            auto swap_result = repository_->trySwapUsers(list_name, sender_telegram_id,
+                                                         receiver_telegram_id);
+
+            if (!swap_result) {
+                return crow::response(400, swap_result.error());
+            }
+
+            return crow::response(200, "Successfully swapped users!");
+        });
 
     app_.port(port_).multithreaded().run();
 }

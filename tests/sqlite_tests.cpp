@@ -35,11 +35,11 @@ TEST_F(SqliteRepositoryTest, CanGetAllUsers) {
 }
 
 TEST_F(SqliteRepositoryTest, CanGetUserByTelegramId) {
-    auto result = repo->tryGetUserByTelegramId(100);
+    auto result = repo->tryGetUser(100);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().first_name, "Alice");
 
-    auto fail = repo->tryGetUserByTelegramId(123);
+    auto fail = repo->tryGetUser(123);
     EXPECT_FALSE(fail.has_value());
 }
 
@@ -68,4 +68,25 @@ TEST_F(SqliteRepositoryTest, CanRemoveList) {
 TEST_F(SqliteRepositoryTest, GetAllListsEmptyInitially) {
     auto lists = repo->tryGetAllLists();
     ASSERT_FALSE(lists.has_value());
+}
+
+TEST_F(SqliteRepositoryTest, SwapUsers) {
+    List mylist("testlist");
+    auto add_res = repo->tryAddList(mylist);
+
+    auto result = repo->trySwapUsers("testlist", 100, 101);
+
+    ASSERT_TRUE(result.has_value());
+
+    auto user1 = repo->tryGetUser(100);
+    auto user2 = repo->tryGetUser(101);
+
+    auto list_user_1 = repo->tryGetListUser(mylist.list_id, user1.value().user_id);
+    auto list_user_2 = repo->tryGetListUser(mylist.list_id, user2.value().user_id);
+
+    ASSERT_TRUE(list_user_1.has_value());
+    ASSERT_TRUE(list_user_2.has_value());
+
+    ASSERT_EQ(list_user_1.value().list_user_order, 2);
+    ASSERT_EQ(list_user_2.value().list_user_order, 1);
 }

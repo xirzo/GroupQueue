@@ -9,7 +9,8 @@ constexpr char kDbPath[] = "data.db3";
 int main() {
     try {
         const std::vector<User> kUsers = {
-            User(618211233, "Alexander", "Zhidkov", "Vladimirovich", true)};
+            User(618211233, "Alexander", "Zhidkov", "Vladimirovich", true),
+            User(6446112154, "Fedor", "Fedorov", "Fedorovich", false)};
 
         auto db = std::make_unique<SQLite::Database>(
             kDbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
