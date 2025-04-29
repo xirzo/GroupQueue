@@ -6,7 +6,6 @@
 
 #include <cstddef>
 #include <expected>
-#include <nlohmann/json.hpp>
 
 #include "repository.h"
 
