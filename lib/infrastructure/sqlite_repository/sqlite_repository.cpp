@@ -90,7 +90,9 @@ std::expected<int64_t, std::string> SqliteRepository::tryAddList(const List& lis
     query.bind(1, list.name);
 
     try {
-        int64_t added_list_id = query.exec();
+        query.exec();
+
+        int64_t added_list_id = db_->getLastInsertRowid();
 
         auto add_result = addUsersToList(List(added_list_id, list.name));
 
