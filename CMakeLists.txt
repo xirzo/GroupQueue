@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.1)
+cmake_minimum_required(VERSION 3.24.4)
 
 project(group_queue LANGUAGES CXX)
 
@@ -11,7 +11,7 @@ find_package(SQLiteCpp REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(Crow)
+find_package(Crow REQUIRED)
 
 add_subdirectory(bin)
 add_subdirectory(lib)

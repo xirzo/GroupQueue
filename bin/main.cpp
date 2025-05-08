@@ -23,7 +23,12 @@ User fromJson(const nlohmann::json &json) {
 }
 
 std::vector<User> loadUsersFromFile(const char *file_path) {
+  if (!std::filesystem::exists(file_path)) {
+    throw std::runtime_error("Users file does not exist");
+  }
+
   std::ifstream file(file_path);
+
   if (!file.is_open()) {
     throw std::runtime_error("Failed to open users file");
   }
@@ -44,8 +49,8 @@ int main() {
   std::size_t port = 5000;
 
   if (!port_env) {
-    std::cerr << "Env 'port' is not set, using default port: "
-              << port << std::endl;
+    std::cerr << "Env 'port' is not set, using default port: " << port
+              << std::endl;
   } else {
     std::string kPortStr(port_env);
     if (kPortStr.empty()) {
