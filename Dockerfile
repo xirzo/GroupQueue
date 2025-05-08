@@ -28,7 +28,6 @@ WORKDIR /group-queue
 COPY bin/ ./bin/
 COPY lib/ ./lib/
 COPY *.json ./
-COPY *.db3 ./
 COPY CMakeLists.txt .
 
 WORKDIR /group-queue/build
@@ -42,6 +41,10 @@ RUN apk add --no-cache libstdc++ libgcc
 RUN addgroup -S group-queue && \
     adduser -S group-queue -G group-queue
 
+RUN mkdir -p /app && \
+    chown group-queue:group-queue /app && \
+    chmod 755 /app
+
 USER group-queue
 
 COPY --chown=group-queue:group-queue --from=build \
@@ -50,10 +53,6 @@ COPY --chown=group-queue:group-queue --from=build \
 
 COPY --chown=group-queue:group-queue --from=build \
     ./group-queue/*.json \
-    ./
-
-COPY --chown=group-queue:group-queue --from=build \
-    ./group-queue/*.db3 \
-    ./
+    ./app/
 
 ENTRYPOINT ["./app/group_queue"]

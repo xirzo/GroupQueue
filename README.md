@@ -23,11 +23,6 @@ Group Queue is a program made for managing queues for groups in ITMO University.
    ]
    ```
 
-2. **`data.db3`** *(optional)*  
-   If you have an existing SQLite database file (`data.db3`), you may put it in the project directory.
-
----
-
 ## Build and Run with Docker 🐳
 
 ### Build the Docker Image 📦

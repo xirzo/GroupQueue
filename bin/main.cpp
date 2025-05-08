@@ -1,17 +1,22 @@
-#include <SQLiteCpp/Database.h>
-
 #include "server.h"
 #include "sqlite_repository.h"
+#include <SQLiteCpp/Database.h>
 #include <charconv>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
-constexpr char kDbPath[] = "data.db3";
-constexpr char kUsersFile[] = "users.json";
+const char *getEnvOrDefault(const char *envVar, const char *defaultValue) {
+  const char *value = std::getenv(envVar);
+  return value ? value : defaultValue;
+}
+
+const char *kUsersFile = getEnvOrDefault("USERS_FILE", "/app/users.json");
+const char *kDbPath = getEnvOrDefault("DB_PATH", "/app/data.db3");
 
 User fromJson(const nlohmann::json &json) {
   return User(json.value("user_id", -1),
@@ -45,11 +50,11 @@ std::vector<User> loadUsersFromFile(const char *file_path) {
 }
 
 int main() {
-  const char *port_env = std::getenv("port");
+  const char *port_env = std::getenv("PORT");
   std::size_t port = 5000;
 
   if (!port_env) {
-    std::cerr << "Env 'port' is not set, using default port: " << port
+    std::cerr << "Env 'PORT' is not set, using default port: " << port
               << std::endl;
   } else {
     std::string kPortStr(port_env);

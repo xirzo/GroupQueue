@@ -1,0 +1,9 @@
+[
+    {
+        "telegram_id": 111111111,
+        "first_name": "Федор",
+        "surname": "Федоров",
+        "second_name": "Федорович",
+        "admin": false
+    }
+]
