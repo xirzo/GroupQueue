@@ -5,6 +5,8 @@
 build/
 out/
 
+**.env
+
 # Clang format
 compile_commands.json
 .cache/
