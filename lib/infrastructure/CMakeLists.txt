@@ -1,2 +1,2 @@
+add_subdirectory(postgre)
 add_subdirectory(server)
-add_subdirectory(sqlite_repository)

@@ -2,12 +2,11 @@ cmake_minimum_required(VERSION 3.24.4)
 
 project(group_queue LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 find_package(nlohmann_json REQUIRED)
-
-find_package(SQLiteCpp REQUIRED)
-
+find_package(PostgreSQL REQUIRED)
+find_package(libpqxx REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)

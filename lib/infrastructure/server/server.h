@@ -1,28 +1,24 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <crow/app.h>
-#include <crow/common.h>
+#include <crow.h>
+#include <memory>
 
-#include <cstddef>
-#include <expected>
-
+#include "list.h"
 #include "repository.h"
 
-class Server
-{
-public:
-    Server(std::size_t port, std::shared_ptr<Repository> repository);
+class Server {
+  public:
+    explicit Server(std::shared_ptr<Repository> repository);
 
-private:
-    crow::json::wvalue jsonFromUser(const User& user);
-    crow::json::wvalue jsonFromList(const List& list);
-    crow::json::wvalue jsonFromListUser(const ListUser& list_user);
+    void start(std::size_t port);
 
-private:
-    crow::SimpleApp app_;
-    std::size_t port_;
-    std::shared_ptr<Repository> repository_;
+  private:
+    crow::json::wvalue jsonFromList(const List &list);
+
+  private:
+    std::unique_ptr<crow::SimpleApp> app_;
+    std::shared_ptr<Repository> r_;
 };
 
-#endif  // !SERVER_H
+#endif // !SERVER_H
