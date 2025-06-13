@@ -6,27 +6,38 @@
 PostgresRepository::PostgresRepository(std::unique_ptr<pqxx::connection> con)
     : con_(std::move(con)) {}
 
-int64_t PostgresRepository::addList(const List &list) {
+std::optional<int64_t> PostgresRepository::addList(const List& list) {
   pqxx::work tx(*con_);
-  pqxx::row row =
-      tx.exec("SELECT add_list($1)", pqxx::params{list.list_name}).one_row();
-  tx.commit();
-  return row[0].as<int64_t>();
+
+  try {
+    pqxx::result result =
+        tx.exec("SELECT add_list($1)", pqxx::params{list.list_name});
+
+    if (result.empty()) {
+      return std::nullopt;
+    }
+
+    tx.commit();
+    return result.one_row()[0].as<int64_t>();
+
+  } catch (const pqxx::sql_error& e) {
+    return std::nullopt;
+  }
 }
 
 std::optional<List> PostgresRepository::getList(int64_t list_id) {
   pqxx::work tx(*con_);
-  pqxx::result tx_result =
+  pqxx::result result =
       tx.exec("SELECT * FROM get_list($1)", pqxx::params{list_id});
 
-  if (tx_result.empty()) {
+  if (result.empty()) {
     return std::nullopt;
   }
 
   tx.commit();
 
-  return List{tx_result.one_row()[0].as<int64_t>(),
-              tx_result.one_row()[1].as<std::string>()};
+  return List{result.one_row()[0].as<int64_t>(),
+              result.one_row()[1].as<std::string>()};
 }
 
 void PostgresRepository::deleteList(int64_t list_id) {

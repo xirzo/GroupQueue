@@ -8,8 +8,10 @@ BEGIN
 
     RETURN new_list_id;
 
-    EXCEPTION WHEN OTHERS THEN
-        RAISE EXCEPTION 'Error adding list: %', SQLERRM;
-        RETURN NULL;
+    EXCEPTION 
+        WHEN unique_violation THEN
+            RETURN NULL;
+        WHEN OTHERS THEN
+            RAISE EXCEPTION 'Error adding list: %', SQLERRM;
 END;
 $$ LANGUAGE plpgsql;

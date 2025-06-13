@@ -25,18 +25,26 @@ void Server::start(std::size_t port) {
 
   CROW_ROUTE((*app_), "/list")
       .methods(crow::HTTPMethod::POST)([this](const crow::request &req) {
+        crow::json::rvalue json;
+
         try {
-          crow::json::rvalue json = crow::json::load(req.body);
-
-          if (!json.has("list_name")) {
-            return crow::response{400, "No list_name"};
-          }
-
-          r_->addList({json["list_name"].s()});
-          return crow::response{200, "OK"};
+          json = crow::json::load(req.body);
         } catch (const std::exception &e) {
           return crow::response{400, e.what()};
         }
+
+        if (!json.has("list_name")) {
+          return crow::response{400, "No list_name"};
+        }
+
+        std::optional<int64_t> result = r_->addList({json["list_name"].s()});
+
+        if (result.has_value() == false) {
+          return crow::response{400, "Failed to add list"};
+        }
+
+        crow::json::wvalue response = {{"list_id", result.value()}};
+        return crow::response{200, response};
       });
 
   CROW_ROUTE((*app_), "/list/<int>")
