@@ -12,7 +12,7 @@ class PostgresRepository : public Repository {
   std::unique_ptr<pqxx::connection> con_;
 
  public:
-  explicit PostgresRepository(const std::string &str);
+  explicit PostgresRepository(std::unique_ptr<pqxx::connection> con);
 
   int64_t addList(const List &list) override;
   List getList(int64_t list_id) override;

@@ -2,9 +2,8 @@
 #include <cstdint>
 #include <pqxx/internal/statement_parameters.hxx>
 
-PostgresRepository::PostgresRepository(const std::string &str) {
-  con_ = std::make_unique<pqxx::connection>(std::move(str));
-}
+PostgresRepository::PostgresRepository(std::unique_ptr<pqxx::connection> con)
+    : con_(std::move(con)) {}
 
 int64_t PostgresRepository::addList(const List &list) {
   pqxx::work tx(*con_);
