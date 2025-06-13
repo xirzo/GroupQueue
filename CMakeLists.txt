@@ -4,6 +4,7 @@ project(group_queue LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(libpqxx_DIR "/usr/local/lib/cmake/libpqxx/")
 find_package(nlohmann_json REQUIRED)
 find_package(PostgreSQL REQUIRED)
 find_package(libpqxx REQUIRED)
