@@ -15,7 +15,7 @@ class PostgresRepository : public Repository {
   explicit PostgresRepository(std::unique_ptr<pqxx::connection> con);
 
   int64_t addList(const List &list) override;
-  List getList(int64_t list_id) override;
+  std::optional<List> getList(int64_t list_id) override;
   void deleteList(int64_t list_id) override;
 };
 
