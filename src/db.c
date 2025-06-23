@@ -1,8 +1,11 @@
 #include "db.h"
 #include <assert.h>
+#include <errno.h>
 #include <libpq-fe.h>
 #include <stddef.h>
 #include <logger.h>
+#include <stdlib.h>
+#include <string.h>
 #include "bool.h"
 
 gqbool GQinitDB(const char *conninfo) {
@@ -36,19 +39,41 @@ gqbool GQaddList(const char *list_name) {
 
     ExecStatusType stat = PQresultStatus(r);
 
-    gqbool suc = gqfalse;
-
-    switch (stat) {
-        case PGRES_TUPLES_OK:
-            LOG_INFO("Succesfully added list with ID: %d", PQgetvalue(r, 0, 0));
-            suc = gqtrue;
-            break;
-
-        default:
-            LOG_ERROR("Failed to add list %s", PQerrorMessage(gConn));
-            break;
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR("Failed to add list: %s", PQerrorMessage(gConn));
+        PQclear(r);
+        return gqfalse;
     }
 
+    char *id_str = PQgetvalue(r, 0, 0);
+    char *id_str_end = NULL;
+
+    errno = 0;
+    long long list_id = strtoll(id_str, &id_str_end, 10);
+
+    if (id_str == id_str_end) {
+        LOG_ERROR("Invalid number format: '%s'", id_str);
+        PQclear(r);
+        return gqfalse;
+    } else if (errno != 0) {
+        LOG_ERROR("Conversion error: %s ('%s')", strerror(errno), id_str);
+        PQclear(r);
+        return gqfalse;
+    } else if (*id_str_end != '\0') {
+        LOG_ERROR("Trailing characters in ID: '%s'", id_str_end);
+        PQclear(r);
+        return gqfalse;
+    } else if (list_id == -1) {
+        LOG_ERROR("List name (%s) is already present in list table", list_name);
+        PQclear(r);
+        return gqfalse;
+    } else if (list_id < 0) {
+        LOG_ERROR("Returned ID is negative: %lld", list_id);
+        PQclear(r);
+        return gqfalse;
+    }
+
+    LOG_INFO("Successfully added list with ID: %lld", list_id);
     PQclear(r);
-    return suc;
+    return gqtrue;
 }
