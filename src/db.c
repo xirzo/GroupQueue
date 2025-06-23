@@ -30,19 +30,25 @@ void GQdestroyDB() {
 }
 
 gqbool GQaddList(const char *list_name) {
-    char     *q = "SELECT * FROM list";
-    PGresult *r = PQexec(gConn, q);
+    const char *q = "SELECT add_list($1)";
+    const char *params[1] = { list_name };
+    PGresult   *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
 
     ExecStatusType stat = PQresultStatus(r);
 
+    gqbool suc = gqfalse;
+
     switch (stat) {
-        case PGRES_COMMAND_OK:
         case PGRES_TUPLES_OK:
-            LOG_INFO("Succesfully added list");
-            return gqtrue;
+            LOG_INFO("Succesfully added list with ID: %d", PQgetvalue(r, 0, 0));
+            suc = gqtrue;
+            break;
 
         default:
             LOG_ERROR("Failed to add list %s", PQerrorMessage(gConn));
-            return gqfalse;
+            break;
     }
+
+    PQclear(r);
+    return suc;
 }
