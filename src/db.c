@@ -33,13 +33,14 @@ void GQdestroyDB() {
 }
 
 gqbool GQaddList(GQlist list) {
-    const char *q = "SELECT add_list($1)";
+    const char *add_list_q = "SELECT add_list($1)";
     const char *params[1] = { list.name };
-    PGresult   *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+    PGresult   *r =
+        PQexecParams(gConn, add_list_q, 1, NULL, params, NULL, NULL, 0);
 
-    ExecStatusType stat = PQresultStatus(r);
+    ExecStatusType add_list_stat = PQresultStatus(r);
 
-    if (stat != PGRES_TUPLES_OK) {
+    if (add_list_stat != PGRES_TUPLES_OK) {
         LOG_ERROR("Failed to add list: %s", PQerrorMessage(gConn));
         PQclear(r);
         return gqfalse;
@@ -67,10 +68,25 @@ gqbool GQaddList(GQlist list) {
         LOG_ERROR("Returned ID is negative: %lld", list_id);
         PQclear(r);
         return gqfalse;
-        return gqfalse;
     }
 
     LOG_INFO("Successfully added list with ID: %lld", list_id);
+
+    const char *add_users_q = "CALL add_list_users($1)";
+
+    char list_name[16];
+    snprintf(list_name, sizeof(list_name), "%lld", list_id);
+    const char *add_users_params[1] = { list_name };
+    PQexecParams(gConn, add_users_q, 1, NULL, add_users_params, NULL, NULL, 0);
+
+    ExecStatusType add_users_stat = PQresultStatus(r);
+
+    if (add_users_stat != PGRES_TUPLES_OK) {
+        LOG_ERROR("Failed to add list users to list %s", PQerrorMessage(gConn));
+        PQclear(r);
+        return gqfalse;
+    }
+
     PQclear(r);
     return gqtrue;
 }

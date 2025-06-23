@@ -1,6 +1,5 @@
 #include "bool.h"
 #include "db.h"
-#include "types.h"
 
 int main(void) {
     const char *conninfo =
@@ -10,8 +9,6 @@ int main(void) {
         return 1;
     }
 
-    GQaddList((GQlist){ .name = "Test List" });
-
     GQaddUser((GQuser){
         .telegram_id = 618214141,
         .first_name = "Aleks",
@@ -20,8 +17,20 @@ int main(void) {
         .is_admin = gqtrue,
     });
 
+    GQaddUser((GQuser){
+        .telegram_id = 618211245,
+        .first_name = "Bebr",
+        .surname = "Kek",
+        .last_name = "Lolovich",
+        .is_admin = gqfalse,
+    });
+
+    GQaddList((GQlist){ .name = "Another List 1" });
+    GQaddList((GQlist){ .name = "Another List 2" });
+
     GQdestroyDB();
     return 0;
 }
 
 // TODO: load initial state with toml files
+// TODO: remove list
