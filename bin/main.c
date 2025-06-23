@@ -1,5 +1,6 @@
 #include "bool.h"
 #include "db.h"
+#include "types.h"
 
 int main(void) {
     const char *conninfo =
@@ -9,7 +10,15 @@ int main(void) {
         return 1;
     }
 
-    GQaddList("Test List Name");
+    GQaddList((GQlist){ .name = "Test List" });
+
+    GQaddUser((GQuser){
+        .telegram_id = 618214141,
+        .first_name = "Aleks",
+        .surname = "Lol",
+        .last_name = "Kekovich",
+        .is_admin = gqtrue,
+    });
 
     GQdestroyDB();
     return 0;

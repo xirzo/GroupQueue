@@ -3,12 +3,14 @@
 
 #include <libpq-fe.h>
 #include "bool.h"
+#include "types.h"
 
 static PGconn *gConn;
 
 gqbool GQinitDB(const char *conninfo);
 void   GQdestroyDB();
 
-gqbool GQaddList(const char *list_name);
+gqbool GQaddList(GQlist list);
+gqbool GQaddUser(GQuser user);
 
 #endif  // !DB_H
