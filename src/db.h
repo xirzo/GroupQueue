@@ -6,7 +6,9 @@
 
 static PGconn *gConn;
 
-void   GQinitDB(PGconn *conn);
+gqbool GQinitDB(const char *conninfo);
+void   GQdestroyDB();
+
 gqbool GQaddList(const char *list_name);
 
 #endif  // !DB_H
