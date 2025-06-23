@@ -8,16 +8,20 @@ int main(void) {
     );
 
     if (PQstatus(conn) == CONNECTION_BAD) {
-        LOG_ERROR("failed to open postgres connection");
+        LOG_ERROR(
+            "Failed to open postgres connection %s", PQerrorMessage(conn)
+        );
         PQfinish(conn);
         return 1;
     }
 
-    LOG_INFO("connection success");
+    GQinitDB(conn);
+    LOG_INFO("PostgreSQL connection success");
+
+    GQaddList("Test List Name");
 
     PQfinish(conn);
-
-    LOG_INFO("connection finished");
+    LOG_INFO("PostgreSQL connection finished");
     return 0;
 }
 

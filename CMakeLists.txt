@@ -5,6 +5,8 @@ project(group_queue LANGUAGES C)
 add_subdirectory(bin)
 add_subdirectory(src)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 set(CMAKE_PREFIX_PATH /usr/lib/ /usr/local/lib/)
 
