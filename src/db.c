@@ -63,13 +63,10 @@ gqbool GQaddList(const char *list_name) {
         LOG_ERROR("Trailing characters in ID: '%s'", id_str_end);
         PQclear(r);
         return gqfalse;
-    } else if (list_id == -1) {
-        LOG_ERROR("List name (%s) is already present in list table", list_name);
-        PQclear(r);
-        return gqfalse;
-    } else if (list_id < 0) {
+    } else if (list_id <= 0) {
         LOG_ERROR("Returned ID is negative: %lld", list_id);
         PQclear(r);
+        return gqfalse;
         return gqfalse;
     }
 
