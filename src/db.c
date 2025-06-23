@@ -8,9 +8,10 @@
 #include <string.h>
 #include "bool.h"
 
+static PGconn *gConn;
+
 gqbool GQinitDB(const char *conninfo) {
     assert(conn != NULL);
-    LOG_INFO("Stated database init");
 
     gConn = PQconnectdb(conninfo);
 
@@ -23,7 +24,7 @@ gqbool GQinitDB(const char *conninfo) {
         return gqfalse;
     }
 
-    LOG_INFO("Succesfully inited database");
+    LOG_INFO("Initalized database");
     return gqtrue;
 }
 

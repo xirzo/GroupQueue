@@ -5,8 +5,6 @@
 #include "bool.h"
 #include "types.h"
 
-static PGconn *gConn;
-
 gqbool GQinitDB(const char *conninfo);
 void   GQdestroyDB();
 
