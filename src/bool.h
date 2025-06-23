@@ -1,7 +1,7 @@
 #ifndef BOOL_H
 #define BOOL_H
 
-#define gqbool  int
+typedef int gqbool;
 #define gqfalse 0
 #define gqtrue  1
 
