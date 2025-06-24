@@ -1,7 +1,6 @@
 #ifndef DB_H
 #define DB_H
 
-#include <libpq-fe.h>
 #include "bool.h"
 #include "types.h"
 
@@ -10,6 +9,7 @@ void   GQdestroyDB();
 
 gqbool    GQaddList(GQlist list);
 long long GQgetListId(const char *name);
+GQlist    GQgetList(long long id);
 
 gqbool GQaddUser(GQuser user);
 

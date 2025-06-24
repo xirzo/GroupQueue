@@ -147,6 +147,52 @@ long long GQgetListId(const char *name) {
     return list_id;
 }
 
+GQlist GQgetList(long long id) {
+    const char *q = "SELECT * FROM list WHERE list_id = $1";
+
+    GQlist result = {
+        .list_id = -1,
+        .name = NULL,
+    };
+
+    char id_str[32];
+    snprintf(id_str, sizeof(id_str), "%lld", id);
+    const char *params[1] = { id_str };
+
+    PGresult *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR(
+            "Failed to get list with id %s, %s", id_str, PQerrorMessage(gConn)
+        );
+        PQclear(r);
+        return result;
+    }
+
+    if (PQntuples(r) == 0) {
+        LOG_ERROR("No list found with id %s", id_str);
+        PQclear(r);
+        return result;
+    }
+
+    result.list_id = id;
+
+    int name_col = PQfnumber(r, "list_name");
+
+    if (name_col == -1) {
+        LOG_ERROR("\"list_name\" column not found");
+    }
+
+    const char *list_name = PQgetvalue(r, 0, name_col);
+
+    strncpy(result.name, list_name, sizeof(result.name) - 1);
+    result.name[sizeof(result.name) - 1] = '\0';
+    PQclear(r);
+    return result;
+}
+
 gqbool GQaddUser(GQuser user) {
     const char *q = "SELECT add_user($1, $2, $3, $4, $5)";
 
