@@ -279,7 +279,35 @@ void GQfreeAllLists(GQlist *lists, int count) {
 }
 
 gqbool GQdeleteList(unsigned long long id) {
-    const char *q = "DELETE FROM list WHERE list_id = 25";
+    const char *q = "DELETE FROM list WHERE list_id = $1";
+
+    char id_str[32];
+    snprintf(id_str, sizeof(id_str), "%llu", id);
+
+    const char *params[1] = { id_str };
+
+    PGresult *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to delete list %s", PQerrorMessage(gConn));
+        PQclear(r);
+        return gqfalse;
+    }
+
+    char *rows_affected = PQcmdTuples(r);
+    int   affected = atoi(rows_affected);
+
+    PQclear(r);
+
+    if (affected == 0) {
+        LOG_INFO("No list found with id %llu to delete", id);
+        return gqfalse;
+    }
+
+    LOG_INFO("Deleted list with id %llu", id);
+    return gqtrue;
 }
 
 gqbool GQaddUser(GQuser user) {

@@ -14,6 +14,7 @@ int main(void) {
         return 1;
     }
 
+    GQdeleteList(25);
     GQrunServer();
 
     GQdestroyServer();
@@ -26,6 +27,6 @@ int main(void) {
 // TODO: swap users in list
 // TODO: to end in list
 
-//  TODO: remove list by id
+//  TODO: add server endpoints for all of the new db functions
 
 // TODO: rewrite all inline sql into schema.sql functions
