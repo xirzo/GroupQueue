@@ -186,12 +186,27 @@ GQlist GQgetList(unsigned long long id) {
 
     if (name_col == -1) {
         LOG_ERROR("\"list_name\" column not found");
+        PQclear(r);
+        return result;
     }
 
     const char *list_name = PQgetvalue(r, 0, name_col);
 
-    strncpy(result.list_name, list_name, sizeof(result.list_name) - 1);
-    result.list_name[sizeof(result.list_name) - 1] = '\0';
+    if (list_name == NULL) {
+        LOG_ERROR("List name is NULL");
+        PQclear(r);
+        return result;
+    }
+
+    result.list_name = malloc(strlen(list_name) + 1);
+    if (result.list_name == NULL) {
+        LOG_ERROR("Failed to allocate memory for list name");
+        PQclear(r);
+        return result;
+    }
+
+    strcpy(result.list_name, list_name);
+
     PQclear(r);
     return result;
 }
