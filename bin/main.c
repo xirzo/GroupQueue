@@ -21,4 +21,14 @@ int main(void) {
 }
 
 // TODO: load initial state with toml/json files
-// TODO: remove list
+
+// TODO: swap users in list
+// TODO: to end in list
+
+//  TODO: get all lists (return GQlist struct)
+//  TODO: get list id by name
+//  TODO: get GQlist by id
+
+//  TODO: remove list by id
+
+// TODO: rewrite all inline sql into schema.sql functions
