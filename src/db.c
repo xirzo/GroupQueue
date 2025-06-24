@@ -148,7 +148,7 @@ long long GQgetListId(const char *name) {
     return list_id;
 }
 
-GQlist GQgetList(long long id) {
+GQlist GQgetList(unsigned long long id) {
     const char *q = "SELECT * FROM list WHERE list_id = $1";
 
     GQlist result = {
@@ -276,6 +276,10 @@ void GQfreeAllLists(GQlist *lists, int count) {
     }
 
     free(lists);
+}
+
+gqbool GQdeleteList(unsigned long long id) {
+    const char *q = "DELETE FROM list WHERE list_id = 25";
 }
 
 gqbool GQaddUser(GQuser user) {
