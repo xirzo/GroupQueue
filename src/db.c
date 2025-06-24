@@ -32,7 +32,6 @@ void GQdestroyDB() {
     PQfinish(gConn);
     LOG_INFO("PostgreSQL connection finished");
 }
-
 gqbool GQaddList(GQlist list) {
     const char *add_list_q = "SELECT add_list($1)";
     const char *params[1] = { list.name };

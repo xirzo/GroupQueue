@@ -20,6 +20,5 @@ int main(void) {
     return 0;
 }
 
-// TODO: load initial state with toml files
+// TODO: load initial state with toml/json files
 // TODO: remove list
-// TODO: http server for serving db methods

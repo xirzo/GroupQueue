@@ -17,6 +17,7 @@ file(CREATE_LINK "${CMAKE_BINARY_DIR}/compile_commands.json"
 find_library(LIBPQ NAMES pq)
 find_library(LOGGER NAMES logger)
 find_library(LIBEVENT NAMES event)
+find_library(LICJSON NAMES cjson)
 
 if (NOT LIBPQ)
     message("libpq not found!")
@@ -28,4 +29,8 @@ endif()
 
 if (NOT LIBEVENT)
     message("libevent not found!")
+endif()
+
+if (NOT LIBCJSON)
+    message("libcjson not found!")
 endif()
