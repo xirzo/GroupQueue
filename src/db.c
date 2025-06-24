@@ -10,6 +10,28 @@
 
 static PGconn *gConn;
 
+static long long str_to_ll(const char *str) {
+    errno = 0;
+    char     *str_end = NULL;
+    long long list_id = strtoll(str, &str_end, 10);
+
+    if (str == str_end) {
+        LOG_ERROR("Invalid number format: '%s'", str);
+        return -1;
+    } else if (errno != 0) {
+        LOG_ERROR("Conversion error: %s ('%s')", strerror(errno), str);
+        return -1;
+    } else if (*str_end != '\0') {
+        LOG_ERROR("Trailing characters in ID: '%s'", str_end);
+        return -1;
+    } else if (list_id <= 0) {
+        LOG_ERROR("Returned ID is negative: %lld", list_id);
+        return -1;
+    }
+
+    return list_id;
+}
+
 gqbool GQinitDB(const char *conninfo) {
     assert(conn != NULL);
 
@@ -91,6 +113,40 @@ gqbool GQaddList(GQlist list) {
     return gqtrue;
 }
 
+long long GQgetListId(const char *name) {
+    const char *q = "SELECT list_id FROM list WHERE list_name = '$1'";
+    const char *params[1] = { name };
+
+    PGresult *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR(
+            "Failed to get list with name %s, %s", name, PQerrorMessage(gConn)
+        );
+        PQclear(r);
+        return -1;
+    }
+
+    if (PQntuples(r) == 0) {
+        LOG_ERROR("No list found with name %s", name);
+        PQclear(r);
+        return -1;
+    }
+
+    char     *id_str = PQgetvalue(r, 0, 0);
+    long long list_id = str_to_ll(id_str);
+
+    if (list_id == -1) {
+        PQclear(r);
+        return gqfalse;
+    }
+
+    PQclear(r);
+    return list_id;
+}
+
 gqbool GQaddUser(GQuser user) {
     const char *q = "SELECT add_user($1, $2, $3, $4, $5)";
 
@@ -121,26 +177,10 @@ gqbool GQaddUser(GQuser user) {
         return gqfalse;
     }
 
-    char *id_str = PQgetvalue(r, 0, 0);
-    char *id_str_end = NULL;
+    char     *id_str = PQgetvalue(r, 0, 0);
+    long long user_id = str_to_ll(id_str);
 
-    errno = 0;
-    long long user_id = strtoll(id_str, &id_str_end, 10);
-
-    if (id_str == id_str_end) {
-        LOG_ERROR("Invalid number format: '%s'", id_str);
-        PQclear(r);
-        return gqfalse;
-    } else if (errno != 0) {
-        LOG_ERROR("Conversion error: %s ('%s')", strerror(errno), id_str);
-        PQclear(r);
-        return gqfalse;
-    } else if (*id_str_end != '\0') {
-        LOG_ERROR("Trailing characters in ID: '%s'", id_str_end);
-        PQclear(r);
-        return gqfalse;
-    } else if (user_id <= 0) {
-        LOG_ERROR("Returned ID is negative: %lld", user_id);
+    if (user_id == -1) {
         PQclear(r);
         return gqfalse;
     }

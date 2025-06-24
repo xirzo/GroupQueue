@@ -8,7 +8,9 @@
 gqbool GQinitDB(const char *conninfo);
 void   GQdestroyDB();
 
-gqbool GQaddList(GQlist list);
+gqbool    GQaddList(GQlist list);
+long long GQgetListId(const char *name);
+
 gqbool GQaddUser(GQuser user);
 
 #endif  // !DB_H
