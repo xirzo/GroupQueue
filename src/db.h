@@ -15,5 +15,10 @@ GQlist   *GQgetAllLists(int *count);
 gqbool    GQdeleteList(unsigned long long id);
 
 gqbool GQaddUser(GQuser user);
+gqbool GQswapListUsers(
+    unsigned long long list_id,
+    unsigned long long user_a_id,
+    unsigned long long user_b_id
+);
 
 #endif  // !DB_H

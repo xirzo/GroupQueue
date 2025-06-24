@@ -278,6 +278,7 @@ void GQfreeAllLists(GQlist *lists, int count) {
     free(lists);
 }
 
+// FIX: remove list_user users too
 gqbool GQdeleteList(unsigned long long id) {
     const char *q = "DELETE FROM list WHERE list_id = $1";
 
@@ -350,5 +351,88 @@ gqbool GQaddUser(GQuser user) {
 
     LOG_INFO("Succesfully added user with ID: %lld", user_id);
     PQclear(r);
+    return gqtrue;
+}
+
+gqbool GQswapListUsers(
+    unsigned long long list_id,
+    unsigned long long user_a_id,
+    unsigned long long user_b_id
+) {
+    PGresult *tr = PQexec(gConn, "BEGIN");
+
+    if (PQresultStatus(tr) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to start transaction: %s", PQerrorMessage(gConn));
+        PQclear(tr);
+        return gqfalse;
+    }
+
+    PQclear(tr);
+
+    const char *q =
+        "WITH orders AS ("
+        "  SELECT a.user_order AS order_a, b.user_order AS order_b "
+        "  FROM list_user a, list_user b "
+        "  WHERE a.list_id = $1 AND b.list_id = $1 "
+        "    AND a.user_id = $2 AND b.user_id = $3"
+        ")"
+        "UPDATE list_user "
+        "SET user_order = CASE "
+        "  WHEN user_id = $2 THEN (SELECT order_b FROM orders) "
+        "  WHEN user_id = $3 THEN (SELECT order_a FROM orders) "
+        "  ELSE user_order "
+        "END "
+        "WHERE list_id = $1 AND user_id IN ($2, $3) "
+        "RETURNING list_user_id";
+
+    char list_id_str[32];
+    char user_a_str[32];
+    char user_b_str[32];
+
+    snprintf(list_id_str, sizeof(list_id_str), "%llu", list_id);
+    snprintf(user_a_str, sizeof(user_a_str), "%llu", user_a_id);
+    snprintf(user_b_str, sizeof(user_b_str), "%llu", user_b_id);
+
+    const char *params[3] = { list_id_str, user_a_str, user_b_str };
+
+    PGresult *r = PQexecParams(gConn, q, 3, NULL, params, NULL, NULL, 0);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR("Failed to swap user orders: %s", PQerrorMessage(gConn));
+        PQexec(gConn, "ROLLBACK");
+        PQclear(r);
+        return gqfalse;
+    }
+
+    int rows_updated = PQntuples(r);
+    PQclear(r);
+
+    if (rows_updated != 2) {
+        LOG_ERROR(
+            "Expected to update 2 rows, but updated %d rows", rows_updated
+        );
+        PQexec(gConn, "ROLLBACK");
+        return gqfalse;
+    }
+
+    PGresult *commit = PQexec(gConn, "COMMIT");
+
+    if (PQresultStatus(commit) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to commit transaction: %s", PQerrorMessage(gConn));
+        PQclear(commit);
+        return gqfalse;
+    }
+
+    PQclear(commit);
+
+    LOG_INFO(
+        "Successfully swapped orders for users %llu and %llu in list %llu",
+        user_a_id,
+        user_b_id,
+        list_id
+    );
+
     return gqtrue;
 }
