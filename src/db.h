@@ -10,6 +10,8 @@ void   GQdestroyDB();
 gqbool    GQaddList(GQlist list);
 long long GQgetListId(const char *name);
 GQlist    GQgetList(long long id);
+void      GQfreeAllLists(GQlist *lists, int count);
+GQlist   *GQgetAllLists(int *count);
 
 gqbool GQaddUser(GQuser user);
 

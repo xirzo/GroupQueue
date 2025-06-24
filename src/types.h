@@ -5,7 +5,7 @@
 
 typedef struct {
     unsigned long long list_id;
-    char              *name;
+    char              *list_name;
 } GQlist;
 
 typedef struct {

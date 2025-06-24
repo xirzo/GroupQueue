@@ -1,3 +1,4 @@
+#include <logger.h>
 #include "bool.h"
 #include "db.h"
 #include "server.h"
@@ -24,10 +25,6 @@ int main(void) {
 
 // TODO: swap users in list
 // TODO: to end in list
-
-//  TODO: get all lists (return GQlist struct)
-//  TODO: get list id by name
-//  TODO: get GQlist by id
 
 //  TODO: remove list by id
 

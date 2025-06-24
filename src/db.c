@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "bool.h"
+#include "types.h"
 
 static PGconn *gConn;
 
@@ -56,7 +57,7 @@ void GQdestroyDB() {
 }
 gqbool GQaddList(GQlist list) {
     const char *add_list_q = "SELECT add_list($1)";
-    const char *params[1] = { list.name };
+    const char *params[1] = { list.list_name };
     PGresult   *r =
         PQexecParams(gConn, add_list_q, 1, NULL, params, NULL, NULL, 0);
 
@@ -152,7 +153,7 @@ GQlist GQgetList(long long id) {
 
     GQlist result = {
         .list_id = -1,
-        .name = NULL,
+        .list_name = NULL,
     };
 
     char id_str[32];
@@ -187,10 +188,94 @@ GQlist GQgetList(long long id) {
 
     const char *list_name = PQgetvalue(r, 0, name_col);
 
-    strncpy(result.name, list_name, sizeof(result.name) - 1);
-    result.name[sizeof(result.name) - 1] = '\0';
+    strncpy(result.list_name, list_name, sizeof(result.list_name) - 1);
+    result.list_name[sizeof(result.list_name) - 1] = '\0';
     PQclear(r);
     return result;
+}
+
+GQlist *GQgetAllLists(int *count) {
+    const char *q = "SELECT * FROM list";
+
+    PGresult *r = PQexec(gConn, q);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR("Failed to get all lists %s", PQerrorMessage(gConn));
+        PQclear(r);
+        return NULL;
+    }
+
+    int num_rows = PQntuples(r);
+
+    GQlist *lists = malloc(sizeof(GQlist) * num_rows);
+
+    if (!lists) {
+        LOG_ERROR("Failed to allocate memory for lists");
+        PQclear(r);
+        return NULL;
+    }
+
+    int id_col = PQfnumber(r, "list_id");
+    int name_col = PQfnumber(r, "list_name");
+
+    if (name_col == -1) {
+        LOG_ERROR("\"list_name\" column not found");
+        PQclear(r);
+        return NULL;
+    }
+
+    if (id_col == -1) {
+        LOG_ERROR("\"list_id\" column not found");
+        PQclear(r);
+        return NULL;
+    }
+
+    for (int i = 0; i < num_rows; i++) {
+        lists[i].list_name = NULL;
+
+        const char *id_str = PQgetvalue(r, i, id_col);
+        lists[i].list_id = str_to_ll(id_str);
+
+        if (lists[i].list_id == -1) {
+            LOG_ERROR("Failed to convert list id");
+            continue;
+        }
+
+        const char *name = PQgetvalue(r, i, name_col);
+        lists[i].list_name = strdup(name);
+
+        if (!lists[i].list_name) {
+            LOG_ERROR("Failed to allocate memory for list name");
+
+            for (int j = 0; j < i; j++) {
+                free(lists[j].list_name);
+            }
+
+            free(lists);
+            PQclear(r);
+            return NULL;
+        }
+    }
+
+    *count = num_rows;
+    PQclear(r);
+    return lists;
+}
+
+void GQfreeAllLists(GQlist *lists, int count) {
+    if (!lists) {
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        if (lists[i].list_name) {
+            free(lists[i].list_name);
+        }
+    }
+
+    free(lists);
 }
 
 gqbool GQaddUser(GQuser user) {

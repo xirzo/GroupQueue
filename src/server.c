@@ -89,7 +89,7 @@ static void add_list_callback(struct evhttp_request *req, void *ctx) {
     LOG_INFO("Adding list with name %s", list_name->valuestring);
 
     if (GQaddList((GQlist){
-            .name = list_name->valuestring,
+            .list_name = list_name->valuestring,
         })
         == gqfalse) {
         LOG_ERROR("Failed to add list with name %s", list_name->valuestring);
