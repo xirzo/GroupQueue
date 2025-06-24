@@ -55,6 +55,8 @@ void GQdestroyDB() {
     PQfinish(gConn);
     LOG_INFO("PostgreSQL connection finished");
 }
+
+// FIX: add transcation for adding list_user and list
 gqbool GQaddList(GQlist list) {
     const char *add_list_q = "SELECT add_list($1)";
     const char *params[1] = { list.list_name };
@@ -278,36 +280,70 @@ void GQfreeAllLists(GQlist *lists, int count) {
     free(lists);
 }
 
-// FIX: remove list_user users too
 gqbool GQdeleteList(unsigned long long id) {
-    const char *q = "DELETE FROM list WHERE list_id = $1";
+    PGresult *tr = PQexec(gConn, "BEGIN");
+
+    if (PQresultStatus(tr) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to start transaction: %s", PQerrorMessage(gConn));
+        PQclear(tr);
+        return gqfalse;
+    }
+
+    PQclear(tr);
 
     char id_str[32];
     snprintf(id_str, sizeof(id_str), "%llu", id);
-
     const char *params[1] = { id_str };
 
-    PGresult *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+    const char *q_users = "DELETE FROM list_user WHERE list_id = $1";
 
-    ExecStatusType stat = PQresultStatus(r);
+    PGresult *r_users =
+        PQexecParams(gConn, q_users, 1, NULL, params, NULL, NULL, 0);
 
-    if (stat != PGRES_COMMAND_OK) {
-        LOG_ERROR("Failed to delete list %s", PQerrorMessage(gConn));
+    if (PQresultStatus(r_users) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to delete list users: %s", PQerrorMessage(gConn));
+        PQexec(gConn, "ROLLBACK");
+        PQclear(r_users);
+        return gqfalse;
+    }
+
+    char *users_affected = PQcmdTuples(r_users);
+    int   users_count = atoi(users_affected);
+    PQclear(r_users);
+
+    const char *q = "DELETE FROM list WHERE list_id = $1";
+    PGresult   *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+
+    if (PQresultStatus(r) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to delete list: %s", PQerrorMessage(gConn));
+        PQexec(gConn, "ROLLBACK");
         PQclear(r);
         return gqfalse;
     }
 
     char *rows_affected = PQcmdTuples(r);
-    int   affected = atoi(rows_affected);
-
+    int   list_affected = atoi(rows_affected);
     PQclear(r);
 
-    if (affected == 0) {
+    if (list_affected == 0) {
         LOG_INFO("No list found with id %llu to delete", id);
+        PQexec(gConn, "ROLLBACK");
         return gqfalse;
     }
 
-    LOG_INFO("Deleted list with id %llu", id);
+    PGresult *commit = PQexec(gConn, "COMMIT");
+    if (PQresultStatus(commit) != PGRES_COMMAND_OK) {
+        LOG_ERROR("Failed to commit transaction: %s", PQerrorMessage(gConn));
+        PQclear(commit);
+        return gqfalse;
+    }
+
+    PQclear(commit);
+
+    LOG_INFO(
+        "Deleted list with id %llu and %d associated users", id, users_count
+    );
+
     return gqtrue;
 }
 
