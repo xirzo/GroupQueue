@@ -7,6 +7,7 @@
 #include <event2/http_struct.h>
 #include <evhttp.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include "bool.h"
 #include "db.h"
@@ -31,17 +32,6 @@ static void health_callback(struct evhttp_request *req, void *ctx) {
     evbuffer_free(reply);
 }
 
-/*
-
-Example json
-
-{
-    "list_name" : "Rof
-}
-
-*/
-
-// TODO: maybe return list id on creation
 static void add_list_callback(struct evhttp_request *req, void *ctx) {
     LOG_INFO("Add list callback!, %s", req->uri);
 
@@ -111,6 +101,402 @@ end:
     cJSON_Delete(json);
 }
 
+static void get_list_id_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Get list ID callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at get list ID");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *list_name =
+        cJSON_GetObjectItemCaseSensitive(json, "list_name");
+
+    if (!cJSON_IsString(list_name) || (list_name->valuestring == NULL)) {
+        LOG_ERROR("Failed to get string from get list ID json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"list_name\" string from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    long long list_id = GQgetListId(list_name->valuestring);
+
+    if (list_id == -1) {
+        LOG_ERROR("Failed to get list ID for name %s", list_name->valuestring);
+        evbuffer_add_printf(reply, "List not found");
+        evhttp_send_reply(req, HTTP_NOTFOUND, NULL, reply);
+        goto end;
+    }
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddNumberToObject(response, "list_id", (double)list_id);
+
+    evbuffer_add_printf(reply, "%s", cJSON_Print(response));
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+    cJSON_Delete(response);
+
+end:
+    evbuffer_free(reply);
+    cJSON_Delete(json);
+}
+
+static void get_list_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Get list callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at get list");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *list_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "list_id");
+
+    if (!cJSON_IsNumber(list_id_json)) {
+        LOG_ERROR("Failed to get list_id from get list json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"list_id\" number from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    unsigned long long list_id = (unsigned long long)list_id_json->valuedouble;
+    GQlist             list = GQgetList(list_id);
+
+    if (list.list_id == (unsigned long long)-1) {
+        LOG_ERROR("Failed to get list details for ID %llu", list_id);
+        evbuffer_add_printf(reply, "List not found");
+        evhttp_send_reply(req, HTTP_NOTFOUND, NULL, reply);
+        goto end;
+    }
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddNumberToObject(response, "list_id", (double)list.list_id);
+    cJSON_AddStringToObject(response, "list_name", list.list_name);
+
+    evbuffer_add_printf(reply, "%s", cJSON_Print(response));
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+    cJSON_Delete(response);
+
+end:
+    evbuffer_free(reply);
+    cJSON_Delete(json);
+}
+
+static void get_all_lists_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Get all lists callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    int     count = 0;
+    GQlist *lists = GQgetAllLists(&count);
+
+    if (lists == NULL) {
+        LOG_ERROR("Failed to get lists");
+        evbuffer_add_printf(reply, "Failed to get lists");
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end_no_lists;
+    }
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON *lists_array = cJSON_AddArrayToObject(response, "lists");
+
+    for (int i = 0; i < count; i++) {
+        cJSON *list_obj = cJSON_CreateObject();
+        cJSON_AddNumberToObject(list_obj, "list_id", (double)lists[i].list_id);
+        cJSON_AddStringToObject(list_obj, "list_name", lists[i].list_name);
+        cJSON_AddItemToArray(lists_array, list_obj);
+    }
+
+    evbuffer_add_printf(reply, "%s", cJSON_Print(response));
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+    cJSON_Delete(response);
+
+    GQfreeAllLists(lists, count);
+
+end_no_lists:
+    evbuffer_free(reply);
+}
+
+static void delete_list_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Delete list callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at delete list");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *list_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "list_id");
+
+    if (!cJSON_IsNumber(list_id_json)) {
+        LOG_ERROR("Failed to get list_id from delete list json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"list_id\" number from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    unsigned long long list_id = (unsigned long long)list_id_json->valuedouble;
+
+    if (GQdeleteList(list_id) == gqfalse) {
+        LOG_ERROR("Failed to delete list with ID %llu", list_id);
+        evbuffer_add_printf(reply, "Failed to delete list, it may not exist");
+        evhttp_send_reply(req, HTTP_NOTFOUND, NULL, reply);
+        goto end;
+    }
+
+    evbuffer_add_printf(reply, "List was deleted");
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+
+end:
+    evbuffer_free(reply);
+    cJSON_Delete(json);
+}
+
+static void add_user_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Add user callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at add user");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *first_name =
+        cJSON_GetObjectItemCaseSensitive(json, "first_name");
+    const cJSON *surname = cJSON_GetObjectItemCaseSensitive(json, "surname");
+    const cJSON *last_name =
+        cJSON_GetObjectItemCaseSensitive(json, "last_name");
+    const cJSON *telegram_id =
+        cJSON_GetObjectItemCaseSensitive(json, "telegram_id");
+    const cJSON *is_admin = cJSON_GetObjectItemCaseSensitive(json, "is_admin");
+
+    if (!cJSON_IsString(first_name) || (first_name->valuestring == NULL)) {
+        LOG_ERROR("Failed to get first_name from add user json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"first_name\" string from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    if (!cJSON_IsNumber(telegram_id)) {
+        LOG_ERROR("Failed to get telegram_id from add user json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"telegram_id\" number from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    GQuser user = { 0 };
+    user.telegram_id = (long long)telegram_id->valuedouble;
+    user.first_name = strdup(first_name->valuestring);
+
+    if (cJSON_IsString(surname) && surname->valuestring != NULL) {
+        user.surname = strdup(surname->valuestring);
+    } else {
+        user.surname = strdup("");
+    }
+
+    if (cJSON_IsString(last_name) && last_name->valuestring != NULL) {
+        user.last_name = strdup(last_name->valuestring);
+    } else {
+        user.last_name = strdup("");
+    }
+
+    if (cJSON_IsBool(is_admin)) {
+        user.is_admin = cJSON_IsTrue(is_admin) ? gqtrue : gqfalse;
+    } else {
+        user.is_admin = gqfalse;
+    }
+
+    LOG_INFO("Adding user with first name %s", user.first_name);
+
+    if (GQaddUser(user) == gqfalse) {
+        LOG_ERROR("Failed to add user with first name %s", user.first_name);
+        evbuffer_add_printf(
+            reply, "Failed to add user, likely it is already present in the db"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+
+        free(user.first_name);
+        free(user.surname);
+        free(user.last_name);
+        goto end;
+    }
+
+    LOG_INFO("Added user with first name %s", user.first_name);
+
+    evbuffer_add_printf(reply, "User was added");
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+
+    free(user.first_name);
+    free(user.surname);
+    free(user.last_name);
+
+end:
+    evbuffer_free(reply);
+    cJSON_Delete(json);
+}
+
+static void swap_list_users_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Swap list users callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at swap list users");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *list_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "list_id");
+    const cJSON *user_a_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "user_a_id");
+    const cJSON *user_b_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "user_b_id");
+
+    if (!cJSON_IsNumber(list_id_json) || !cJSON_IsNumber(user_a_id_json)
+        || !cJSON_IsNumber(user_b_id_json)) {
+        LOG_ERROR("Failed to get required IDs from swap list users json");
+        evbuffer_add_printf(reply, "Failed to get required IDs from json");
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    unsigned long long list_id = (unsigned long long)list_id_json->valuedouble;
+    unsigned long long user_a_id =
+        (unsigned long long)user_a_id_json->valuedouble;
+    unsigned long long user_b_id =
+        (unsigned long long)user_b_id_json->valuedouble;
+
+    if (GQswapListUsers(list_id, user_a_id, user_b_id) == gqfalse) {
+        LOG_ERROR(
+            "Failed to swap users %llu and %llu in list %llu",
+            user_a_id,
+            user_b_id,
+            list_id
+        );
+        evbuffer_add_printf(reply, "Failed to swap users");
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    LOG_INFO(
+        "Swapped users %llu and %llu in list %llu",
+        user_a_id,
+        user_b_id,
+        list_id
+    );
+    evbuffer_add_printf(reply, "Users were swapped");
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+
+end:
+    evbuffer_free(reply);
+    cJSON_Delete(json);
+}
+
 static void signal_cb(evutil_socket_t fd, short event, void *arg) {
     LOG_INFO("%s signal received", strsignal(fd));
     event_base_loopbreak(arg);
@@ -125,10 +511,15 @@ gqbool GQinitServer(const char *ip, const unsigned short port) {
         return gqfalse;
     }
 
-    /* may faild if callback exists, but I don`t care */
     evhttp_set_gencb(gServer, undefined_uri_callback, NULL);
     evhttp_set_cb(gServer, "/health", health_callback, NULL);
     evhttp_set_cb(gServer, "/list/add", add_list_callback, NULL);
+    evhttp_set_cb(gServer, "/list/id", get_list_id_callback, NULL);
+    evhttp_set_cb(gServer, "/list/get", get_list_callback, NULL);
+    evhttp_set_cb(gServer, "/list/all", get_all_lists_callback, NULL);
+    evhttp_set_cb(gServer, "/list/delete", delete_list_callback, NULL);
+    evhttp_set_cb(gServer, "/user/add", add_user_callback, NULL);
+    evhttp_set_cb(gServer, "/list/users/swap", swap_list_users_callback, NULL);
 
     sSigInt = evsignal_new(gBase, SIGINT, signal_cb, gBase);
     event_add(sSigInt, NULL);

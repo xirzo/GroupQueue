@@ -25,6 +25,8 @@ int main(void) {
 
 // TODO: to end in list
 
-//  TODO: add server endpoints for all of the new db functions
-
 // TODO: rewrite all inline sql into schema.sql functions
+// TODO: put all of the sql files into one schema
+
+// TODO: admin functions
+// TODO: auth system for admins
