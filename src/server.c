@@ -225,6 +225,95 @@ end:
     cJSON_Delete(json);
 }
 
+static void get_list_users_callback(struct evhttp_request *req, void *ctx) {
+    LOG_INFO("Get list users callback!, %s", req->uri);
+    struct evbuffer *reply = evbuffer_new();
+
+    char    read_buffer[BUFFER_SIZE];
+    ssize_t bytes_read = evbuffer_copyout(
+        req->input_buffer, (void *)read_buffer, sizeof(read_buffer)
+    );
+    read_buffer[bytes_read] = '\0';
+
+    cJSON *json = cJSON_Parse(read_buffer);
+    if (json == NULL) {
+        LOG_ERROR("Could not parse JSON at get list users");
+        const char *error_ptr = cJSON_GetErrorPtr();
+
+        if (error_ptr != NULL) {
+            LOG_ERROR("JSON parser error at: %s\n", error_ptr);
+            evbuffer_add_printf(
+                reply, "Failed to parse json, error at: %s", error_ptr
+            );
+        } else {
+            evbuffer_add_printf(reply, "Failed to parse json");
+        }
+
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    const cJSON *list_id_json =
+        cJSON_GetObjectItemCaseSensitive(json, "list_id");
+
+    if (!cJSON_IsNumber(list_id_json)) {
+        LOG_ERROR("Failed to get list_id from get list users json");
+        evbuffer_add_printf(
+            reply, "Failed to get \"list_id\" number from json"
+        );
+        evhttp_send_reply(req, HTTP_BADREQUEST, NULL, reply);
+        goto end;
+    }
+
+    unsigned long long list_id = (unsigned long long)list_id_json->valuedouble;
+
+    int     count = 0;
+    GQuser *users = GQgetUsersInList(list_id, &count);
+
+    if (users == NULL) {
+        LOG_ERROR("Failed to get users for list ID %llu", list_id);
+        evbuffer_add_printf(reply, "Failed to get users for the list");
+        evhttp_send_reply(req, HTTP_NOTFOUND, NULL, reply);
+        goto end;
+    }
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON *users_array = cJSON_AddArrayToObject(response, "users");
+
+    for (int i = 0; i < count; i++) {
+        cJSON *user_obj = cJSON_CreateObject();
+        cJSON_AddNumberToObject(user_obj, "user_id", (double)users[i].user_id);
+        cJSON_AddNumberToObject(
+            user_obj, "telegram_id", (double)users[i].telegram_id
+        );
+        cJSON_AddStringToObject(user_obj, "first_name", users[i].first_name);
+        cJSON_AddStringToObject(user_obj, "surname", users[i].surname);
+        cJSON_AddStringToObject(user_obj, "last_name", users[i].last_name);
+        cJSON_AddBoolToObject(
+            user_obj, "is_admin", users[i].is_admin == gqtrue
+        );
+        cJSON_AddItemToArray(users_array, user_obj);
+    }
+
+    evbuffer_add_printf(reply, "%s", cJSON_Print(response));
+    evhttp_send_reply(req, HTTP_OK, NULL, reply);
+
+    cJSON_Delete(response);
+
+    for (int i = 0; i < count; i++) {
+        free(users[i].first_name);
+        free(users[i].surname);
+        free(users[i].last_name);
+    }
+    free(users);
+
+end:
+    evbuffer_free(reply);
+    if (json) {
+        cJSON_Delete(json);
+    }
+}
+
 static void get_all_lists_callback(struct evhttp_request *req, void *ctx) {
     LOG_INFO("Get all lists callback!, %s", req->uri);
     struct evbuffer *reply = evbuffer_new();
@@ -516,6 +605,7 @@ gqbool GQinitServer(const char *ip, const unsigned short port) {
     evhttp_set_cb(gServer, "/list/add", add_list_callback, NULL);
     evhttp_set_cb(gServer, "/list/id", get_list_id_callback, NULL);
     evhttp_set_cb(gServer, "/list/get", get_list_callback, NULL);
+    evhttp_set_cb(gServer, "/list/users/get", get_list_users_callback, NULL);
     evhttp_set_cb(gServer, "/list/all", get_all_lists_callback, NULL);
     evhttp_set_cb(gServer, "/list/delete", delete_list_callback, NULL);
     evhttp_set_cb(gServer, "/user/add", add_user_callback, NULL);

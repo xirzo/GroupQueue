@@ -4,6 +4,7 @@
 #include <libpq-fe.h>
 #include <stddef.h>
 #include <logger.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "bool.h"
@@ -209,6 +210,77 @@ GQlist GQgetList(unsigned long long id) {
 
     PQclear(r);
     return result;
+}
+
+GQuser *GQgetUsersInList(unsigned long long id, int *count) {
+    const char *q =
+        "SELECT * FROM \"user\" WHERE user_id IN (SELECT user_id FROM list_user WHERE list_id = $1)";
+
+    char id_str[16];
+    snprintf(id_str, sizeof(id_str), "%llu", id);
+
+    const char *params[1] = { id_str };
+
+    PGresult *r = PQexecParams(gConn, q, 1, NULL, params, NULL, NULL, 0);
+
+    ExecStatusType stat = PQresultStatus(r);
+
+    if (stat != PGRES_TUPLES_OK) {
+        LOG_ERROR(
+            "Failed to commit get list_users for list %llu: %s",
+            id,
+            PQerrorMessage(gConn)
+        );
+        PQclear(r);
+        return NULL;
+    }
+
+    *count = PQntuples(r);
+    GQuser *users = malloc(sizeof(GQuser) * *count);
+
+    int user_id = PQfnumber(r, "user_id");
+    int telegram_id = PQfnumber(r, "telegram_id");
+    int first_name = PQfnumber(r, "first_name");
+    int surname = PQfnumber(r, "surname");
+    int last_name = PQfnumber(r, "last_name");
+    int is_admin = PQfnumber(r, "is_admin");
+
+    for (int i = 0; i < *count; i++) {
+        GQuser *user = &users[i];
+        user->user_id = str_to_ll(PQgetvalue(r, i, user_id));
+        user->telegram_id = str_to_ll(PQgetvalue(r, i, telegram_id));
+
+        user->first_name = strdup(PQgetvalue(r, i, first_name));
+        user->surname = strdup(PQgetvalue(r, i, surname));
+        user->last_name = strdup(PQgetvalue(r, i, last_name));
+
+        char *is_adm = PQgetvalue(r, i, is_admin);
+
+        if (is_adm[0] == 't') {
+            user->is_admin = gqtrue;
+        } else {
+            user->is_admin = gqfalse;
+        }
+    }
+
+    LOG_INFO("Successfully got list_users for list %llu", id);
+    PQclear(r);
+    return users;
+}
+
+void GQfreeUsersInList(GQuser *users, int count) {
+    if (!users) {
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        GQuser *user = &users[i];
+        free(user->first_name);
+        free(user->last_name);
+        free(user->surname);
+    }
+
+    free(users);
 }
 
 GQlist *GQgetAllLists(int *count) {
