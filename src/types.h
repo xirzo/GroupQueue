@@ -17,4 +17,9 @@ typedef struct {
     gqbool             is_admin;
 } GQuser;
 
+typedef struct {
+    GQuser             user;
+    unsigned long long order;
+} GQlistUser;
+
 #endif  // !TYPES_H

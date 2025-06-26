@@ -93,7 +93,7 @@ static void add_list_callback(struct evhttp_request *req, void *ctx) {
 
     LOG_INFO("Added list with name %s", list_name->valuestring);
 
-    evbuffer_add_printf(reply, "List was added");
+    evbuffer_add_printf(reply, "List was aRofdded");
     evhttp_send_reply(req, HTTP_OK, NULL, reply);
 
 end:
@@ -267,10 +267,10 @@ static void get_list_users_callback(struct evhttp_request *req, void *ctx) {
 
     unsigned long long list_id = (unsigned long long)list_id_json->valuedouble;
 
-    int     count = 0;
-    GQuser *users = GQgetUsersInList(list_id, &count);
+    int         count = 0;
+    GQlistUser *list_users = GQgetListUsers(list_id, &count);
 
-    if (users == NULL) {
+    if (list_users == NULL) {
         LOG_ERROR("Failed to get users for list ID %llu", list_id);
         evbuffer_add_printf(reply, "Failed to get users for the list");
         evhttp_send_reply(req, HTTP_NOTFOUND, NULL, reply);
@@ -282,16 +282,25 @@ static void get_list_users_callback(struct evhttp_request *req, void *ctx) {
 
     for (int i = 0; i < count; i++) {
         cJSON *user_obj = cJSON_CreateObject();
-        cJSON_AddNumberToObject(user_obj, "user_id", (double)users[i].user_id);
         cJSON_AddNumberToObject(
-            user_obj, "telegram_id", (double)users[i].telegram_id
+            user_obj, "user_id", (double)list_users[i].user.user_id
         );
-        cJSON_AddStringToObject(user_obj, "first_name", users[i].first_name);
-        cJSON_AddStringToObject(user_obj, "surname", users[i].surname);
-        cJSON_AddStringToObject(user_obj, "last_name", users[i].last_name);
+        cJSON_AddNumberToObject(
+            user_obj, "telegram_id", (double)list_users[i].user.telegram_id
+        );
+        cJSON_AddStringToObject(
+            user_obj, "first_name", list_users[i].user.first_name
+        );
+        cJSON_AddStringToObject(
+            user_obj, "surname", list_users[i].user.surname
+        );
+        cJSON_AddStringToObject(
+            user_obj, "last_name", list_users[i].user.last_name
+        );
         cJSON_AddBoolToObject(
-            user_obj, "is_admin", users[i].is_admin == gqtrue
+            user_obj, "is_admin", list_users[i].user.is_admin == gqtrue
         );
+        cJSON_AddNumberToObject(user_obj, "user_order", list_users[i].order);
         cJSON_AddItemToArray(users_array, user_obj);
     }
 
@@ -301,11 +310,11 @@ static void get_list_users_callback(struct evhttp_request *req, void *ctx) {
     cJSON_Delete(response);
 
     for (int i = 0; i < count; i++) {
-        free(users[i].first_name);
-        free(users[i].surname);
-        free(users[i].last_name);
+        free(list_users[i].user.first_name);
+        free(list_users[i].user.surname);
+        free(list_users[i].user.last_name);
     }
-    free(users);
+    free(list_users);
 
 end:
     evbuffer_free(reply);

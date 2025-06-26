@@ -7,14 +7,14 @@
 gqbool GQinitDB(const char *conninfo);
 void   GQdestroyDB();
 
-gqbool    GQaddList(GQlist list);
-long long GQgetListId(const char *name);
-GQlist    GQgetList(unsigned long long id);
-GQuser   *GQgetUsersInList(unsigned long long id, int *count);
-void      GQfreeUsersInList(GQuser *users, int count);
-GQlist   *GQgetAllLists(int *count);
-void      GQfreeAllLists(GQlist *lists, int count);
-gqbool    GQdeleteList(unsigned long long id);
+gqbool      GQaddList(GQlist list);
+long long   GQgetListId(const char *name);
+GQlist      GQgetList(unsigned long long id);
+GQlistUser *GQgetListUsers(unsigned long long list_id, int *count);
+void        GQfreeUsersInList(GQuser *users, int count);
+GQlist     *GQgetAllLists(int *count);
+void        GQfreeAllLists(GQlist *lists, int count);
+gqbool      GQdeleteList(unsigned long long id);
 
 gqbool GQaddUser(GQuser user);
 gqbool GQswapListUsers(

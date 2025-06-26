@@ -212,12 +212,19 @@ GQlist GQgetList(unsigned long long id) {
     return result;
 }
 
-GQuser *GQgetUsersInList(unsigned long long id, int *count) {
+GQlistUser *GQgetListUsers(unsigned long long list_id, int *count) {
     const char *q =
-        "SELECT * FROM \"user\" WHERE user_id IN (SELECT user_id FROM list_user WHERE list_id = $1)";
+        "SELECT \"user\".user_id, telegram_id, first_name, surname, last_name, is_admin, list_user.user_order FROM \"user\" INNER JOIN list_user ON \"user\".user_id = list_user.user_id WHERE list_user.list_id = $1";
+
+    // clang-format off
+    //  user_id | telegram_id | first_name | surname | last_name | is_admin | user_order
+    // ---------+-------------+------------+---------+-----------+----------+------------
+    //        8 |   618211245 | Bebr       | Kek     | Lolovich  | f        |          1
+    //        7 |   618214141 | Aleks      | Lol     | Kekovich  | t        |          2
+    // clang-format on
 
     char id_str[16];
-    snprintf(id_str, sizeof(id_str), "%llu", id);
+    snprintf(id_str, sizeof(id_str), "%llu", list_id);
 
     const char *params[1] = { id_str };
 
@@ -228,7 +235,7 @@ GQuser *GQgetUsersInList(unsigned long long id, int *count) {
     if (stat != PGRES_TUPLES_OK) {
         LOG_ERROR(
             "Failed to commit get list_users for list %llu: %s",
-            id,
+            list_id,
             PQerrorMessage(gConn)
         );
         PQclear(r);
@@ -236,7 +243,7 @@ GQuser *GQgetUsersInList(unsigned long long id, int *count) {
     }
 
     *count = PQntuples(r);
-    GQuser *users = malloc(sizeof(GQuser) * *count);
+    GQlistUser *users = malloc(sizeof(GQuser) * *count);
 
     int user_id = PQfnumber(r, "user_id");
     int telegram_id = PQfnumber(r, "telegram_id");
@@ -244,26 +251,28 @@ GQuser *GQgetUsersInList(unsigned long long id, int *count) {
     int surname = PQfnumber(r, "surname");
     int last_name = PQfnumber(r, "last_name");
     int is_admin = PQfnumber(r, "is_admin");
+    int user_order = PQfnumber(r, "user_order");
 
     for (int i = 0; i < *count; i++) {
-        GQuser *user = &users[i];
-        user->user_id = str_to_ll(PQgetvalue(r, i, user_id));
-        user->telegram_id = str_to_ll(PQgetvalue(r, i, telegram_id));
+        GQlistUser *user = &users[i];
+        user->user.user_id = str_to_ll(PQgetvalue(r, i, user_id));
+        user->user.telegram_id = str_to_ll(PQgetvalue(r, i, telegram_id));
+        user->order = str_to_ll(PQgetvalue(r, i, user_order));
 
-        user->first_name = strdup(PQgetvalue(r, i, first_name));
-        user->surname = strdup(PQgetvalue(r, i, surname));
-        user->last_name = strdup(PQgetvalue(r, i, last_name));
+        user->user.first_name = strdup(PQgetvalue(r, i, first_name));
+        user->user.surname = strdup(PQgetvalue(r, i, surname));
+        user->user.last_name = strdup(PQgetvalue(r, i, last_name));
 
         char *is_adm = PQgetvalue(r, i, is_admin);
 
         if (is_adm[0] == 't') {
-            user->is_admin = gqtrue;
+            user->user.is_admin = gqtrue;
         } else {
-            user->is_admin = gqfalse;
+            user->user.is_admin = gqfalse;
         }
     }
 
-    LOG_INFO("Successfully got list_users for list %llu", id);
+    LOG_INFO("Successfully got list_users for list %llu", list_id);
     PQclear(r);
     return users;
 }
