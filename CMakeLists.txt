@@ -1,24 +1,36 @@
 cmake_minimum_required(VERSION 3.24.4)
 
-project(group_queue LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 23)
-
-find_package(nlohmann_json REQUIRED)
-
-find_package(SQLiteCpp REQUIRED)
-
-find_package(Threads REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(Crow REQUIRED)
+project(group_queue LANGUAGES C)
 
 add_subdirectory(bin)
-add_subdirectory(lib)
+add_subdirectory(src)
 
-option(BUILD_TESTS "Build tests" OFF)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+set(CMAKE_PREFIX_PATH /usr/lib/ /usr/local/lib/)
 
-if(BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
+file(CREATE_LINK "${CMAKE_BINARY_DIR}/compile_commands.json"
+                 "${CMAKE_SOURCE_DIR}/compile_commands.json"
+                 COPY_ON_ERROR)
+
+find_library(LIBPQ NAMES pq)
+find_library(LOGGER NAMES logger)
+find_library(LIBEVENT NAMES event)
+find_library(LICJSON NAMES cjson)
+
+if (NOT LIBPQ)
+    message("libpq not found!")
+endif()
+
+if (NOT LOGGER)
+    message("logger not found!")
+endif()
+
+if (NOT LIBEVENT)
+    message("libevent not found!")
+endif()
+
+if (NOT LIBCJSON)
+    message("libcjson not found!")
 endif()
