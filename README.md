@@ -194,6 +194,50 @@ Status Codes:
 - 200: Users swapped successfully
 - 400: Invalid parameters or users not found in list
 
+#### POST `/list/users`
+
+Retrieves all users in a specific list with their order and details.  
+Input JSON:
+
+```json
+{
+  "list_id": 123
+}
+```
+
+Response JSON:
+
+```json
+{
+  "users": [
+    {
+      "user_id": 8,
+      "telegram_id": 618211245,
+      "first_name": "Bebr",
+      "surname": "Kek",
+      "last_name": "Lolovich",
+      "is_admin": false,
+      "order": 1
+    },
+    {
+      "user_id": 7,
+      "telegram_id": 618214141,
+      "first_name": "Aleks",
+      "surname": "Lol",
+      "last_name": "Kekovich",
+      "is_admin": true,
+      "order": 2
+    }
+  ]
+}
+```
+
+Status Codes:
+
+- 200: Users retrieved successfully
+- 400: Invalid parameters
+- 404: List not found
+
 ## Sources
 
 - [Postgresql docs](https://www.postgresql.org/docs/current)
